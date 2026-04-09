@@ -14,6 +14,6 @@ I did some reading on personal knowledge management systems and how they tend to
 
 I haven't built that part yet. Deliberately. I've been using it for a few days and I want to see what my notes actually look like before I start engineering digest emails or push notifications. How many notes do I actually record in a week? What do the themes look like? Is the contradiction detection useful or noisy? Building retrieval features for a system I haven't really stress-tested yet feels like premature optimisation.
 
-The whole thing is on GitHub at [github.com/skthewimp/second-brain](https://github.com/skthewimp/second-brain) if you want to poke at it. The `CLAUDE.md` wiki schema is probably the most reusable part - you could adapt it for any personal wiki even without the iOS app.
+The whole thing is on GitHub at [github.com/skthewimp/pensieve](https://github.com/skthewimp/pensieve) if you want to poke at it. The `CLAUDE.md` wiki schema is probably the most reusable part - you could adapt it for any personal wiki even without the iOS app.
 
 For now I'm just talking into my phone on walks and seeing what accumulates.
