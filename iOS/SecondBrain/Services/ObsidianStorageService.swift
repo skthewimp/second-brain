@@ -1,48 +1,82 @@
 import Foundation
 
-/// Writes processed voice notes as markdown files into the Obsidian vault.
+/// Writes processed voice notes as markdown files into an Obsidian vault.
 ///
-/// The vault lives in the app's iCloud container (if available) or local Documents.
-/// Obsidian on iOS can open vaults from either location.
-///
-/// Storage strategy:
-/// - The wiki vault is stored in the app's Documents directory
-/// - Obsidian on iOS can open it as a local vault (no iCloud needed)
-/// - To sync to Mac: the user sets up Obsidian on both devices pointing to the same
-///   iCloud folder, OR uses Obsidian's "Open folder as vault" on the Mac after
-///   connecting the phone via Finder/cable to copy files
-/// - Markdown files are ~2-3KB each; even years of notes fit in minimal storage
-class ObsidianStorageService {
+/// The user picks their Obsidian vault folder once (via folder picker in Settings).
+/// The app saves a security-scoped bookmark so it remembers the location.
+/// If no vault is selected, files are saved to the app's local Documents directory.
+class ObsidianStorageService: ObservableObject {
 
-    let vaultURL: URL
-    let rawDirectory: URL
+    @Published var vaultURL: URL
+    @Published var isVaultLinked: Bool
+    var rawDirectory: URL
+
+    private let bookmarkKey = "obsidianVaultBookmark"
 
     init() {
-        // Use app's Documents directory as the vault root
-        // This is accessible via Files app and Finder when phone is connected
+        // Try to restore saved vault bookmark
+        if let bookmarkData = UserDefaults.standard.data(forKey: "obsidianVaultBookmark"),
+           let url = ObsidianStorageService.resolveBookmark(bookmarkData) {
+            self.vaultURL = url
+            self.isVaultLinked = true
+            self.rawDirectory = url.appendingPathComponent("raw")
+            print("Restored vault: \(url.path)")
+        } else {
+            // Fallback to local storage
+            let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let localVault = documents.appendingPathComponent("SecondBrainVault")
+            self.vaultURL = localVault
+            self.isVaultLinked = false
+            self.rawDirectory = localVault.appendingPathComponent("raw")
+        }
+
+        ensureDirectories()
+        ensureWikiScaffold()
+    }
+
+    /// Link to an Obsidian vault folder selected by the user
+    func linkVault(url: URL) {
+        let accessing = url.startAccessingSecurityScopedResource()
+
+        do {
+            let bookmarkData = try url.bookmarkData(
+                options: .minimalBookmark,
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+            UserDefaults.standard.set(bookmarkData, forKey: bookmarkKey)
+
+            self.vaultURL = url
+            self.rawDirectory = url.appendingPathComponent("raw")
+            self.isVaultLinked = true
+
+            ensureDirectories()
+            ensureWikiScaffold()
+
+            print("Linked vault: \(url.path)")
+        } catch {
+            print("Failed to save bookmark: \(error)")
+        }
+
+        if accessing { url.stopAccessingSecurityScopedResource() }
+    }
+
+    /// Unlink the vault (revert to local storage)
+    func unlinkVault() {
+        UserDefaults.standard.removeObject(forKey: bookmarkKey)
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         self.vaultURL = documents.appendingPathComponent("SecondBrainVault")
         self.rawDirectory = vaultURL.appendingPathComponent("raw")
-
-        // Create directory structure
-        let dirs = [
-            rawDirectory,
-            vaultURL.appendingPathComponent("wiki"),
-            vaultURL.appendingPathComponent("wiki/themes"),
-            vaultURL.appendingPathComponent("wiki/tensions"),
-            vaultURL.appendingPathComponent("wiki/insights")
-        ]
-
-        for dir in dirs {
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        }
-
-        // Copy CLAUDE.md and initial wiki files on first launch
-        ensureWikiScaffold()
+        self.isVaultLinked = false
+        ensureDirectories()
     }
 
     /// Save a processed thought note as a markdown file in the raw directory.
     func save(note: ThoughtNote, processed: ClaudeProcessedNote) throws -> URL {
+        // Access security-scoped resource if needed
+        let accessing = vaultURL.startAccessingSecurityScopedResource()
+        defer { if accessing { vaultURL.stopAccessingSecurityScopedResource() } }
+
         let fileURL = rawDirectory.appendingPathComponent(note.wikiFilename)
 
         let dateFormatter = ISO8601DateFormatter()
@@ -80,67 +114,64 @@ class ObsidianStorageService {
         return fileURL
     }
 
-    /// Check how many unprocessed raw files exist (for display purposes)
+    /// Check how many raw note files exist
     func rawNoteCount() -> Int {
+        let accessing = vaultURL.startAccessingSecurityScopedResource()
+        defer { if accessing { vaultURL.stopAccessingSecurityScopedResource() } }
+
         let files = (try? FileManager.default.contentsOfDirectory(at: rawDirectory, includingPropertiesForKeys: nil)) ?? []
         return files.filter { $0.pathExtension == "md" }.count
     }
 
-    /// Set up initial wiki structure on first launch
-    private func ensureWikiScaffold() {
-        let indexPath = vaultURL.appendingPathComponent("wiki/index.md")
+    // MARK: - Private
 
-        // Only scaffold if index doesn't exist yet
+    private static func resolveBookmark(_ data: Data) -> URL? {
+        var isStale = false
+        guard let url = try? URL(
+            resolvingBookmarkData: data,
+            options: [],
+            relativeTo: nil,
+            bookmarkDataIsStale: &isStale
+        ) else { return nil }
+
+        if isStale {
+            // Re-save bookmark
+            if let newData = try? url.bookmarkData(options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil) {
+                UserDefaults.standard.set(newData, forKey: "obsidianVaultBookmark")
+            }
+        }
+        return url
+    }
+
+    private func ensureDirectories() {
+        let accessing = vaultURL.startAccessingSecurityScopedResource()
+        defer { if accessing { vaultURL.stopAccessingSecurityScopedResource() } }
+
+        let dirs = [
+            rawDirectory,
+            vaultURL.appendingPathComponent("wiki"),
+            vaultURL.appendingPathComponent("wiki/themes"),
+            vaultURL.appendingPathComponent("wiki/tensions"),
+            vaultURL.appendingPathComponent("wiki/insights")
+        ]
+        for dir in dirs {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+    }
+
+    private func ensureWikiScaffold() {
+        let accessing = vaultURL.startAccessingSecurityScopedResource()
+        defer { if accessing { vaultURL.stopAccessingSecurityScopedResource() } }
+
+        let indexPath = vaultURL.appendingPathComponent("wiki/index.md")
         guard !FileManager.default.fileExists(atPath: indexPath.path) else { return }
 
+        let today = todayString()
         let files: [(String, String)] = [
-            ("wiki/index.md", """
-            ---
-            title: Index
-            type: index
-            last_updated: \(todayString())
-            ---
-
-            # Second Brain — Index
-
-            ## Themes
-            *Theme pages are created automatically as you record voice notes.*
-
-            ## Tensions
-            - [[contradictions]] — Shifts and contradictions in thinking over time
-
-            ## Timeline
-            - [[timeline]] — Reverse-chronological record of all thoughts
-            """),
-            ("wiki/log.md", """
-            ---
-            title: Ingestion Log
-            type: log
-            ---
-
-            # Ingestion Log
-            """),
-            ("wiki/timeline.md", """
-            ---
-            title: Timeline
-            type: timeline
-            last_updated: \(todayString())
-            ---
-
-            # Timeline
-            """),
-            ("wiki/tensions/contradictions.md", """
-            ---
-            title: Contradictions & Shifts
-            type: tension
-            last_updated: \(todayString())
-            source_count: 0
-            ---
-
-            # Contradictions & Shifts
-
-            *Tracks where your thinking has shifted, reversed, or gone circular.*
-            """)
+            ("wiki/index.md", "---\ntitle: Index\ntype: index\nlast_updated: \(today)\n---\n\n# Second Brain — Index\n\n## Themes\n*Theme pages are created automatically as you record voice notes.*\n\n## Tensions\n- [[contradictions]] — Shifts and contradictions in thinking over time\n\n## Timeline\n- [[timeline]] — Reverse-chronological record of all thoughts"),
+            ("wiki/log.md", "---\ntitle: Ingestion Log\ntype: log\n---\n\n# Ingestion Log"),
+            ("wiki/timeline.md", "---\ntitle: Timeline\ntype: timeline\nlast_updated: \(today)\n---\n\n# Timeline"),
+            ("wiki/tensions/contradictions.md", "---\ntitle: Contradictions & Shifts\ntype: tension\nlast_updated: \(today)\nsource_count: 0\n---\n\n# Contradictions & Shifts\n\n*Tracks where your thinking has shifted, reversed, or gone circular.*")
         ]
 
         for (path, content) in files {

@@ -13,6 +13,10 @@ class ThoughtCaptureService: ObservableObject {
     @Published var isRecording = false
     @Published var recordingDuration: TimeInterval = 0
 
+    // Forwarded from storageService so SwiftUI can observe vault state
+    @Published var isVaultLinked = false
+    @Published var vaultURL: URL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+
     let audioRecorder = AudioRecorderService()
     let transcriptionService = TranscriptionService()
     let storageService = ObsidianStorageService()
@@ -36,6 +40,14 @@ class ThoughtCaptureService: ObservableObject {
         audioRecorder.$recordingDuration
             .receive(on: DispatchQueue.main)
             .assign(to: &$recordingDuration)
+
+        // Forward storageService state changes
+        storageService.$isVaultLinked
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$isVaultLinked)
+        storageService.$vaultURL
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$vaultURL)
     }
 
     /// Set the API key (called from settings)
@@ -156,6 +168,49 @@ class ThoughtCaptureService: ObservableObject {
     /// Retry processing a failed note
     func retryNote(id: String) async {
         await processNote(id: id)
+    }
+
+    /// Reprocess and save all notes that have transcriptions but weren't saved to the wiki
+    func resaveAllToVault() async {
+        guard let claudeService = claudeService else {
+            print("Claude API not configured")
+            return
+        }
+
+        await MainActor.run { isProcessing = true }
+
+        for note in notes {
+            guard !note.savedToWiki, let transcription = note.transcription, !transcription.isEmpty else { continue }
+
+            // Re-process through Claude to get full structured output
+            do {
+                let processed = try await claudeService.process(transcription: transcription)
+
+                await MainActor.run {
+                    if let i = notes.firstIndex(where: { $0.id == note.id }) {
+                        notes[i].summary = processed.summary.joined(separator: "\n")
+                        notes[i].themes = processed.themes
+                        notes[i].emotionalTone = processed.emotionalTone
+                    }
+                }
+
+                let currentNote = await MainActor.run { notes.first(where: { $0.id == note.id })! }
+                _ = try storageService.save(note: currentNote, processed: processed)
+
+                await MainActor.run {
+                    if let i = notes.firstIndex(where: { $0.id == note.id }) {
+                        notes[i].savedToWiki = true
+                        notes[i].status = .completed
+                    }
+                }
+                print("Resaved note: \(note.wikiFilename)")
+            } catch {
+                print("Failed to resave note \(note.id): \(error)")
+            }
+        }
+
+        await MainActor.run { isProcessing = false }
+        saveNotes()
     }
 
     /// Delete a note
