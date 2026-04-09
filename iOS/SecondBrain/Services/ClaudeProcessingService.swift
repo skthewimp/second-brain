@@ -16,9 +16,9 @@ class ClaudeProcessingService {
     /// Process a transcription into structured note data.
     func process(transcription: String) async throws -> ClaudeProcessedNote {
         let systemPrompt = """
-        You are processing a voice note for a personal "second brain" system. The user records \
-        stream-of-consciousness thoughts throughout their day. Your job is to extract structure \
-        from the raw transcription.
+        You are processing a voice note for a personal thought-capture system called Pensieve. \
+        The user records stream-of-consciousness thoughts throughout their day. Your job is to \
+        extract structure from the raw transcription.
 
         Return a JSON object with exactly these fields:
         {

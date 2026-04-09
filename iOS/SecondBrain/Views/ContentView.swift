@@ -17,7 +17,7 @@ struct ContentView: View {
                 NotesListView()
                     .frame(maxHeight: .infinity)
             }
-            .navigationTitle("Second Brain")
+            .navigationTitle("Pensieve")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showSettings = true }) {

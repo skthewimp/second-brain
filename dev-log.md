@@ -1,4 +1,4 @@
-# Second Brain - Dev Log
+# Pensieve - Dev Log
 
 ## Project Genesis
 
@@ -11,7 +11,7 @@
 
 Karthik shared a link to Andrej Karpathy's viral "LLM Wiki" gist - a pattern for building personal knowledge bases where an LLM incrementally builds and maintains a structured wiki from raw sources, rather than doing RAG-style retrieval from scratch every time.
 
-The conversation evolved from "how do I use this?" into designing a personal system. The key constraint: Karthik has ADHD and his therapist recommended a "safe second brain" but didn't say how to implement it. The problem wasn't just note-taking - it was tracking how his thinking evolves over time (especially around career decisions) and spotting when he's going in circles.
+The conversation evolved from "how do I use this?" into designing a personal system. The key constraint: Karthik's therapist recommended externalising his thinking but didn't say how to implement it. The problem wasn't just note-taking - it was tracking how his thinking evolves over time (especially around career decisions) and spotting when he's going in circles.
 
 ## Prompts and Decisions
 
@@ -25,7 +25,7 @@ Fetched the gist, summarized the LLM Wiki pattern, asked what domain to apply it
 
 Checked memory - knew about writing voice, data science background, Babbage Insight. Suggested a research/writing wiki since his writing is built on cross-domain connections.
 
-**Prompt:** [Long voice-transcribed message about ADHD, therapist's recommendation, needing zero-friction input, existing voice notes app]
+**Prompt:** [Long voice-transcribed message about thought management, therapist's recommendation, needing zero-friction input, existing voice notes app]
 
 This was the key design moment. Three critical constraints emerged:
 1. Input must be dead simple (just talk)
@@ -93,7 +93,7 @@ Redesigned RecordingView with two recording modes:
 WhisperKit runs OpenAI's Whisper models on the iPhone's Neural Engine. Better accuracy than Apple's built-in speech recognition, especially for stream-of-consciousness speech with mixed vocabulary. Runs fully on-device - no network needed for transcription.
 
 ### Why Claude API over local Ollama
-The original NotesAgent used Ollama (qwen2.5:7b-instruct) for summarization. For the second brain, we need more nuanced processing - theme extraction, emotional tone detection, identifying connections to other topics. Claude is significantly better at this kind of structured analysis. Also eliminates the Mac dependency since Ollama only ran on the Mac server.
+The original NotesAgent used Ollama (qwen2.5:7b-instruct) for summarization. For Pensieve, we need more nuanced processing - theme extraction, emotional tone detection, identifying connections to other topics. Claude is significantly better at this kind of structured analysis. Also eliminates the Mac dependency since Ollama only ran on the Mac server.
 
 ### Wiki Schema Design (CLAUDE.md)
 The CLAUDE.md is the most important file in the project. It tells Claude Code how to maintain the wiki. Key design choices:
@@ -143,7 +143,7 @@ Copied `wiki/CLAUDE.md` into the Obsidian vault so Claude Code can read it when 
 
 **Automation:** Set up cron job to run daily at 10:17am. User explicitly declined file-watcher approach ("no overkill. daily is good enough"). Also declined Gemini's suggestion to add action item routing to CRM ("We will do it later. Let's collect data for a week").
 
-**ADHD Second Brain research:** Researched the concept from an ADHD standpoint. Key finding: the system has strong capture and organization but is missing automated resurfacing (daily digests, "you're going in circles" alerts, related past notes when new ones come in). User wisely decided to wait a week of actual usage before adding retrieval features.
+**Personal knowledge management research:** Researched second brain systems and common failure modes. Key finding: the system has strong capture and organization but is missing automated resurfacing (daily digests, "you're going in circles" alerts, related past notes when new ones come in). User wisely decided to wait a week of actual usage before adding retrieval features.
 
 ### Nested ObservableObject Pattern (recurring lesson)
 

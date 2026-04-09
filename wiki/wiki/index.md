@@ -4,7 +4,7 @@ type: index
 last_updated: 2026-04-07
 ---
 
-# Second Brain — Index
+# Pensieve — Index
 
 ## Themes
 *Theme pages are created automatically as you record voice notes.*

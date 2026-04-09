@@ -1,5 +1,5 @@
 #!/bin/bash
-# Second Brain wiki ingestion — runs via cron
+# Pensieve wiki ingestion — runs via cron
 # Checks for new raw notes and asks Claude Code to ingest them into the wiki.
 
 VAULT_DIR="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/SecondBrain"

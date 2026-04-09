@@ -24,7 +24,7 @@ class ObsidianStorageService: ObservableObject {
         } else {
             // Fallback to local storage
             let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let localVault = documents.appendingPathComponent("SecondBrainVault")
+            let localVault = documents.appendingPathComponent("PensieveVault")
             self.vaultURL = localVault
             self.isVaultLinked = false
             self.rawDirectory = localVault.appendingPathComponent("raw")
@@ -65,7 +65,7 @@ class ObsidianStorageService: ObservableObject {
     func unlinkVault() {
         UserDefaults.standard.removeObject(forKey: bookmarkKey)
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        self.vaultURL = documents.appendingPathComponent("SecondBrainVault")
+        self.vaultURL = documents.appendingPathComponent("PensieveVault")
         self.rawDirectory = vaultURL.appendingPathComponent("raw")
         self.isVaultLinked = false
         ensureDirectories()
@@ -168,7 +168,7 @@ class ObsidianStorageService: ObservableObject {
 
         let today = todayString()
         let files: [(String, String)] = [
-            ("wiki/index.md", "---\ntitle: Index\ntype: index\nlast_updated: \(today)\n---\n\n# Second Brain — Index\n\n## Themes\n*Theme pages are created automatically as you record voice notes.*\n\n## Tensions\n- [[contradictions]] — Shifts and contradictions in thinking over time\n\n## Timeline\n- [[timeline]] — Reverse-chronological record of all thoughts"),
+            ("wiki/index.md", "---\ntitle: Index\ntype: index\nlast_updated: \(today)\n---\n\n# Pensieve — Index\n\n## Themes\n*Theme pages are created automatically as you record voice notes.*\n\n## Tensions\n- [[contradictions]] — Shifts and contradictions in thinking over time\n\n## Timeline\n- [[timeline]] — Reverse-chronological record of all thoughts"),
             ("wiki/log.md", "---\ntitle: Ingestion Log\ntype: log\n---\n\n# Ingestion Log"),
             ("wiki/timeline.md", "---\ntitle: Timeline\ntype: timeline\nlast_updated: \(today)\n---\n\n# Timeline"),
             ("wiki/tensions/contradictions.md", "---\ntitle: Contradictions & Shifts\ntype: tension\nlast_updated: \(today)\nsource_count: 0\n---\n\n# Contradictions & Shifts\n\n*Tracks where your thinking has shifted, reversed, or gone circular.*")

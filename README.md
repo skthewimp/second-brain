@@ -1,6 +1,6 @@
-# Second Brain
+# Pensieve
 
-A voice-driven personal wiki for capturing and organizing thoughts over time. Built for managing ADHD and maintaining a "safe second brain" as recommended by a therapist.
+A voice-driven personal wiki for capturing and organizing thoughts over time. Talk into your phone, and a structured wiki builds itself.
 
 Inspired by [Andrej Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
 
@@ -11,14 +11,14 @@ Inspired by [Andrej Karpathy's LLM Wiki pattern](https://gist.github.com/karpath
    - Transcribes your voice on-device using [WhisperKit](https://github.com/argmaxinc/WhisperKit) (no network needed)
    - Sends the transcription to Claude API to extract themes, emotional tone, key quotes, and connections
    - Saves a structured markdown file to an Obsidian vault
-3. **On your Mac, periodically run Claude Code** to ingest the raw notes into a structured wiki — theme pages, timeline, contradiction tracking, and cross-references.
+3. **On your Mac, a daily script runs Claude Code** to ingest the raw notes into a structured wiki - theme pages, timeline, contradiction tracking, and cross-references.
 4. **Browse in Obsidian** whenever you want to see where your head is at.
 
 ## Why This Exists
 
 The problem: you think a lot, your priorities shift, and three months later you can't remember what you were optimizing for in January vs. April. You sense you might be going in circles but can't prove it.
 
-The solution: talk freely, let the system organize everything, and the wiki shows you your own patterns — including the contradictions and circular thinking you can't see from inside your own head.
+The solution: talk freely, let the system organize everything, and the wiki shows you your own patterns - including the contradictions and circular thinking you can't see from inside your own head.
 
 ## Architecture
 
@@ -41,7 +41,7 @@ Phone (iOS)                          Mac
 ## Project Structure
 
 ```
-SecondBrain/
+Pensieve/
 ├── iOS/                    # iPhone app (SwiftUI)
 │   └── SecondBrain/
 │       ├── Models/         # ThoughtNote, ClaudeResponse
@@ -55,6 +55,8 @@ SecondBrain/
 │   │   ├── themes/         # Career, priorities, health, etc.
 │   │   └── tensions/       # Contradictions and shifts
 │   └── CLAUDE.md           # Schema for wiki maintenance
+├── scripts/
+│   └── ingest.sh           # Daily wiki ingestion via Claude Code
 └── docs/
     ├── karpathy-llm-wiki.md    # Reference: the original pattern
     └── superpowers/plans/       # Implementation plan
@@ -76,7 +78,7 @@ SecondBrain/
 3. **Wait for Whisper model** to download (~150MB, one time)
 4. **Start talking.** Record thoughts, the app handles the rest.
 5. **Set up Obsidian vault sync** between phone and Mac (iCloud or manual)
-6. **On Mac**, open Claude Code in the `wiki/` directory and say "ingest new notes"
+6. **On Mac**, the daily cron job runs `scripts/ingest.sh` to process new notes into the wiki
 
 ### Sync Options
 - **Obsidian + iCloud** (recommended): Create the vault in Obsidian on iPhone, it syncs via iCloud. Open same vault on Mac. Free, automatic, ~KB of storage.
@@ -93,9 +95,9 @@ SecondBrain/
 
 The wiki in `wiki/` is maintained by Claude Code. Open Claude Code in that directory and:
 
-- **"Ingest new notes"** — processes raw voice notes into the wiki structure
-- **"What was I thinking about X in February?"** — queries the wiki
-- **"Am I going in circles on anything?"** — checks contradictions
-- **"Lint the wiki"** — health-check for orphan pages, stale entries, missing links
+- **"Ingest new notes"** - processes raw voice notes into the wiki structure
+- **"What was I thinking about X in February?"** - queries the wiki
+- **"Am I going in circles on anything?"** - checks contradictions
+- **"Lint the wiki"** - health-check for orphan pages, stale entries, missing links
 
 The CLAUDE.md file in the wiki directory contains the full schema and instructions.
