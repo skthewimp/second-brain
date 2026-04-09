@@ -1,0 +1,419 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		10CDAF20AD6878D9232B9F17 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99960B4B30A6A589A2A711BB /* ContentView.swift */; };
+		2023A0D40506B278A3A43587 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2995E4F3A63CFB3924C08393 /* TranscriptionService.swift */; };
+		22A2CD682E4D1FB4AD7FE0F6 /* ThoughtNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A209F29B7E7A445D16B3C32 /* ThoughtNote.swift */; };
+		331E148374F958E173EC1872 /* ThoughtCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0852BC7B0CC5748706D963F0 /* ThoughtCaptureService.swift */; };
+		49345FA4849AA8BC2AFE7F1D /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = CD213DB2C248BCE2F03486B8 /* OrderedCollections */; };
+		5221E0479444716D12B8FB69 /* SecondBrainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62F5B9FAF45A537F834F8D4 /* SecondBrainApp.swift */; };
+		55390540EDCEDEC8D58B7F64 /* NotesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 352F6FF59907E6E702184D2F /* NotesListView.swift */; };
+		5BF7E29DB7AE9BCFE32A52E1 /* NoteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8C0B54D8CA922A59FD77E5 /* NoteDetailView.swift */; };
+		6D662C47253AD573BD44870A /* ClaudeResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB1FC50350CF5E7D54D828 /* ClaudeResponse.swift */; };
+		7BD396C8E1A3C35FF995214C /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0C8854DD4758C5B19E4B33 /* RecordingView.swift */; };
+		BD10EF27640A05C1B83EE6BF /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216AF836874BCD55803381A2 /* SettingsView.swift */; };
+		CBCFA2CAF7589C66BD6984DD /* ClaudeProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB39105EE5F8F46DA152B5D1 /* ClaudeProcessingService.swift */; };
+		E0388A4DA35E163DCD68545B /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 45E78C2B298C7CEB4E8F6E3B /* WhisperKit */; };
+		EAF8B0839B75A54979D3BCA4 /* AudioRecorderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 014FA6F842B942E674E2DA8B /* AudioRecorderService.swift */; };
+		EC2CFD96B058E6014055158F /* ObsidianStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA2728964FD1CB47647F96B /* ObsidianStorageService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		014FA6F842B942E674E2DA8B /* AudioRecorderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorderService.swift; sourceTree = "<group>"; };
+		04689380AABF2CF7199602E3 /* SecondBrain.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SecondBrain.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0852BC7B0CC5748706D963F0 /* ThoughtCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThoughtCaptureService.swift; sourceTree = "<group>"; };
+		0A209F29B7E7A445D16B3C32 /* ThoughtNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThoughtNote.swift; sourceTree = "<group>"; };
+		216AF836874BCD55803381A2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		2995E4F3A63CFB3924C08393 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
+		352F6FF59907E6E702184D2F /* NotesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesListView.swift; sourceTree = "<group>"; };
+		458D7EAD6E40AAE48603CC63 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		99960B4B30A6A589A2A711BB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		9D8C0B54D8CA922A59FD77E5 /* NoteDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteDetailView.swift; sourceTree = "<group>"; };
+		A5CB1FC50350CF5E7D54D828 /* ClaudeResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeResponse.swift; sourceTree = "<group>"; };
+		BB0C8854DD4758C5B19E4B33 /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
+		F62F5B9FAF45A537F834F8D4 /* SecondBrainApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecondBrainApp.swift; sourceTree = "<group>"; };
+		FAA2728964FD1CB47647F96B /* ObsidianStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObsidianStorageService.swift; sourceTree = "<group>"; };
+		FB39105EE5F8F46DA152B5D1 /* ClaudeProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProcessingService.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D8C33C4B2D0B9BAFD7D6BFBE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E0388A4DA35E163DCD68545B /* WhisperKit in Frameworks */,
+				49345FA4849AA8BC2AFE7F1D /* OrderedCollections in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		15E7246960D1A3E503D3A0FE /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A5CB1FC50350CF5E7D54D828 /* ClaudeResponse.swift */,
+				0A209F29B7E7A445D16B3C32 /* ThoughtNote.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		3E73DAD754AFF7D75CD98940 = {
+			isa = PBXGroup;
+			children = (
+				6050670BC32BBAE735F1BCCA /* SecondBrain */,
+				8FCCA9366CDEA5E28F3A5824 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		54C206A7F5F13C6AD64DD28C /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				99960B4B30A6A589A2A711BB /* ContentView.swift */,
+				9D8C0B54D8CA922A59FD77E5 /* NoteDetailView.swift */,
+				352F6FF59907E6E702184D2F /* NotesListView.swift */,
+				BB0C8854DD4758C5B19E4B33 /* RecordingView.swift */,
+				216AF836874BCD55803381A2 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		6050670BC32BBAE735F1BCCA /* SecondBrain */ = {
+			isa = PBXGroup;
+			children = (
+				458D7EAD6E40AAE48603CC63 /* Info.plist */,
+				F62F5B9FAF45A537F834F8D4 /* SecondBrainApp.swift */,
+				15E7246960D1A3E503D3A0FE /* Models */,
+				A72AB40712EDC74B3FF68B3E /* Services */,
+				54C206A7F5F13C6AD64DD28C /* Views */,
+			);
+			path = SecondBrain;
+			sourceTree = "<group>";
+		};
+		8FCCA9366CDEA5E28F3A5824 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				04689380AABF2CF7199602E3 /* SecondBrain.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A72AB40712EDC74B3FF68B3E /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				014FA6F842B942E674E2DA8B /* AudioRecorderService.swift */,
+				FB39105EE5F8F46DA152B5D1 /* ClaudeProcessingService.swift */,
+				FAA2728964FD1CB47647F96B /* ObsidianStorageService.swift */,
+				0852BC7B0CC5748706D963F0 /* ThoughtCaptureService.swift */,
+				2995E4F3A63CFB3924C08393 /* TranscriptionService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FA8B7DFF2D7B9F379859A7A4 /* SecondBrain */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 39A7361B0481698547D3C2CE /* Build configuration list for PBXNativeTarget "SecondBrain" */;
+			buildPhases = (
+				F3476FE2F21FA3B4917F9216 /* Sources */,
+				D8C33C4B2D0B9BAFD7D6BFBE /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SecondBrain;
+			packageProductDependencies = (
+				45E78C2B298C7CEB4E8F6E3B /* WhisperKit */,
+				CD213DB2C248BCE2F03486B8 /* OrderedCollections */,
+			);
+			productName = SecondBrain;
+			productReference = 04689380AABF2CF7199602E3 /* SecondBrain.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CB5EEAAB702C3F1DD96559FD /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					FA8B7DFF2D7B9F379859A7A4 = {
+						DevelopmentTeam = 6APL9VM8C3;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 7FE2A7B0AB4E951DF693313D /* Build configuration list for PBXProject "SecondBrain" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 3E73DAD754AFF7D75CD98940;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				95A399AB511A5C21EED44BBE /* XCRemoteSwiftPackageReference "WhisperKit" */,
+				F8BA7660FF14BCC26853C42F /* XCRemoteSwiftPackageReference "swift-collections" */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FA8B7DFF2D7B9F379859A7A4 /* SecondBrain */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F3476FE2F21FA3B4917F9216 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EAF8B0839B75A54979D3BCA4 /* AudioRecorderService.swift in Sources */,
+				CBCFA2CAF7589C66BD6984DD /* ClaudeProcessingService.swift in Sources */,
+				6D662C47253AD573BD44870A /* ClaudeResponse.swift in Sources */,
+				10CDAF20AD6878D9232B9F17 /* ContentView.swift in Sources */,
+				5BF7E29DB7AE9BCFE32A52E1 /* NoteDetailView.swift in Sources */,
+				55390540EDCEDEC8D58B7F64 /* NotesListView.swift in Sources */,
+				EC2CFD96B058E6014055158F /* ObsidianStorageService.swift in Sources */,
+				7BD396C8E1A3C35FF995214C /* RecordingView.swift in Sources */,
+				5221E0479444716D12B8FB69 /* SecondBrainApp.swift in Sources */,
+				BD10EF27640A05C1B83EE6BF /* SettingsView.swift in Sources */,
+				331E148374F958E173EC1872 /* ThoughtCaptureService.swift in Sources */,
+				22A2CD682E4D1FB4AD7FE0F6 /* ThoughtNote.swift in Sources */,
+				2023A0D40506B278A3A43587 /* TranscriptionService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		12B8A0EDEEE9171AB10A27F6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		3834B77F8EF85BC3B09CAF91 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 6APL9VM8C3;
+				INFOPLIST_FILE = SecondBrain/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.karthikshashidhar.secondbrain;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_MODULE_INTERFACE = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		5D88C3CDFACE84BC835A8E5A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		C58199267F98568DB7787E4F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 6APL9VM8C3;
+				INFOPLIST_FILE = SecondBrain/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.karthikshashidhar.secondbrain;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_MODULE_INTERFACE = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		39A7361B0481698547D3C2CE /* Build configuration list for PBXNativeTarget "SecondBrain" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C58199267F98568DB7787E4F /* Debug */,
+				3834B77F8EF85BC3B09CAF91 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7FE2A7B0AB4E951DF693313D /* Build configuration list for PBXProject "SecondBrain" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				12B8A0EDEEE9171AB10A27F6 /* Debug */,
+				5D88C3CDFACE84BC835A8E5A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		95A399AB511A5C21EED44BBE /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
+		F8BA7660FF14BCC26853C42F /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		45E78C2B298C7CEB4E8F6E3B /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 95A399AB511A5C21EED44BBE /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
+		CD213DB2C248BCE2F03486B8 /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F8BA7660FF14BCC26853C42F /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = CB5EEAAB702C3F1DD96559FD /* Project object */;
+}
