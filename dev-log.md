@@ -112,11 +112,57 @@ Three options documented in the plan:
 
 Went with option 1 as the recommended approach. Storage is negligible (~3KB per note).
 
+### Session 2 continued (2026-04-09 afternoon)
+
+**Prompt:** "on the app i selected the secondbrain folder. but now it still says 'not linked'"
+
+Two bugs in the Obsidian vault linking:
+
+1. `startAccessingSecurityScopedResource()` was behind a strict `guard` that caused `linkVault()` to silently fail. Fixed by just tracking whether access was granted without bailing on `false`.
+
+2. **Same nested ObservableObject bug as recording.** `storageService.isVaultLinked` is `@Published` on `ObsidianStorageService`, but since `storageService` is a plain property on `ThoughtCaptureService`, SwiftUI never sees the change. Fixed the same way as before - forwarded `isVaultLinked` and `vaultURL` through `ThoughtCaptureService` via Combine's `assign(to:)`. Updated `SettingsView` to read from the forwarded properties. This is the third time this pattern has come up (isRecording, recordingDuration, isVaultLinked) - it's the single most common SwiftUI gotcha in this project.
+
+**Prompt:** "ok but we need to configure obsidian on both right?"
+
+Set up Obsidian on the phone first. User created an iCloud vault called "SecondBrain" in Obsidian. The app's folder picker was pointed to this vault. Confirmed iCloud sync was working - the vault appeared on the Mac at `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/SecondBrain/`.
+
+**Prompt:** "as a one time exercise can you make sure all older notes are also pushed into obsidian?"
+
+Added `resaveAllToVault()` method to `ThoughtCaptureService` - iterates over all notes with transcriptions that haven't been saved to wiki, re-processes each through Claude API to get the full structured output (title, keyQuotes, connections), and saves to the vault. Added a "Vault Sync" section in Settings with a button to trigger this.
+
+**Prompt:** "when does the wiki get populated?"
+
+The raw notes were being saved but the wiki pages (themes, timeline, contradictions) weren't being maintained. Built `scripts/ingest.sh` - a shell script that:
+1. Checks `raw/` for notes not listed in `wiki/log.md`
+2. If unprocessed notes exist, runs Claude Code (`claude -p --dangerously-skip-permissions --model sonnet`) with the CLAUDE.md instructions to ingest them
+3. Lock file prevents concurrent runs
+
+Copied `wiki/CLAUDE.md` into the Obsidian vault so Claude Code can read it when running from there.
+
+**Test ingestion:** Ran manually against the first raw note (`2026-04-09_1154` - the AI/algorithmic thinking note). Claude Code created 6 theme pages (ai, consulting, career, business, productivity, systems), updated timeline, index, and log. Noted the themes were tightly clustered around a single idea - exactly the kind of pattern the system should surface.
+
+**Automation:** Set up cron job to run daily at 10:17am. User explicitly declined file-watcher approach ("no overkill. daily is good enough"). Also declined Gemini's suggestion to add action item routing to CRM ("We will do it later. Let's collect data for a week").
+
+**ADHD Second Brain research:** Researched the concept from an ADHD standpoint. Key finding: the system has strong capture and organization but is missing automated resurfacing (daily digests, "you're going in circles" alerts, related past notes when new ones come in). User wisely decided to wait a week of actual usage before adding retrieval features.
+
+### Nested ObservableObject Pattern (recurring lesson)
+
+SwiftUI does not observe `@Published` properties on nested `ObservableObject`s. If `ServiceA` holds `ServiceB` (which is an `ObservableObject`), changes to `ServiceB.someProperty` won't trigger SwiftUI view updates even if `someProperty` is `@Published`.
+
+**Fix:** Forward the property through the parent using Combine:
+```swift
+serviceB.$someProperty
+    .receive(on: DispatchQueue.main)
+    .assign(to: &$someProperty)
+```
+
+This came up three times in this project. If I add more observable state to child services, I need to forward it.
+
 ## Stack
 
 - **iOS App:** Swift, SwiftUI, iOS 17+
 - **On-device transcription:** WhisperKit (Whisper base model, ~150MB)
 - **Theme extraction:** Claude API (claude-sonnet-4-6)
-- **Wiki browser:** Obsidian (free)
-- **Wiki maintenance:** Claude Code
+- **Wiki browser:** Obsidian (free, iCloud sync)
+- **Wiki maintenance:** Claude Code (daily cron via `scripts/ingest.sh`)
 - **Project generation:** xcodegen
