@@ -16,6 +16,37 @@ class AudioRecorderService: NSObject, ObservableObject {
         self.recordingsDirectory = documentsPath.appendingPathComponent("Recordings")
         super.init()
         try? FileManager.default.createDirectory(at: recordingsDirectory, withIntermediateDirectories: true)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleInterruption(_:)),
+            name: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance()
+        )
+    }
+
+    @objc private func handleInterruption(_ notification: Notification) {
+        guard let info = notification.userInfo,
+              let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+
+        switch type {
+        case .began:
+            audioRecorder?.pause()
+        case .ended:
+            guard let optionsValue = info[AVAudioSessionInterruptionOptionKey] as? UInt else { return }
+            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+            if options.contains(.shouldResume), isRecording {
+                do {
+                    try AVAudioSession.sharedInstance().setActive(true)
+                    audioRecorder?.record()
+                } catch {
+                    print("Failed to resume after interruption: \(error)")
+                }
+            }
+        @unknown default:
+            break
+        }
     }
 
     func requestPermission() async -> Bool {
