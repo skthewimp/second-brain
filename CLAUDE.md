@@ -112,8 +112,8 @@ Uses iOS security-scoped bookmarks to persist folder access. User picks vault vi
 - Wiki ingestion rewritten as a Swift binary (`pensieve-ingest`) that does a single direct Claude API call — ~33x cheaper than the old agentic Claude Code path (~$0.01/note vs ~$0.36/note on a measured 10-note run)
 - User is in "collect data for a week" mode — do NOT add features unless asked
 
-### Pending manual action
-**Grant Full Disk Access to `/Users/Karthik/.local/bin/pensieve-ingest`** in System Settings → Privacy & Security → Full Disk Access. Until this is done, the daily 10:17am launchd run will fail with "Operation not permitted" because launchd-spawned binaries can't read the iCloud Obsidian vault without FDA. Test after granting: `launchctl kickstart -k gui/$(id -u)/com.karthikshashidhar.pensieve.ingest && sleep 3 && cat /tmp/pensieve-ingest.log`
+### Known gotcha: Full Disk Access after macOS updates
+`/Users/Karthik/.local/bin/pensieve-ingest` needs Full Disk Access so launchd-spawned runs can read the iCloud Obsidian vault. The binary is adhoc-signed, so macOS updates can invalidate the TCC grant while leaving the UI toggle visibly "on" — symptom is `error: The file "…md" couldn't be opened` in `/tmp/pensieve-ingest.log`. Fix: remove the entry with `–` in System Settings → Privacy & Security → Full Disk Access, re-add `/Users/Karthik/.local/bin/pensieve-ingest` (⌘⇧G to paste path), then test with `launchctl kickstart -k gui/$(id -u)/com.karthikshashidhar.pensieve.ingest`.
 
 ### Deferred work (user explicitly deferred these)
 1. **Retrieval/resurfacing** — daily digests, "you're going in circles" alerts, related past notes on new capture. Waiting for usage data.
