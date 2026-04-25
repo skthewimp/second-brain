@@ -17,47 +17,50 @@ public struct IngestEngine {
         let reader = VaultReader(vaultURL: vaultURL)
         let snapshot = try reader.snapshot()
 
-        guard !snapshot.unprocessed.isEmpty else {
-            return IngestionStats(
-                notesProcessed: 0, themesUpdated: 0, themesCreated: 0,
-                contradictionsFlagged: 0, inputTokens: 0, outputTokens: 0,
-                cacheReadTokens: 0, cacheWriteTokens: 0
+        var stats = IngestionStats(
+            notesProcessed: 0, themesUpdated: 0, themesCreated: 0,
+            contradictionsFlagged: 0, inputTokens: 0, outputTokens: 0,
+            cacheReadTokens: 0, cacheWriteTokens: 0
+        )
+
+        if !snapshot.unprocessed.isEmpty {
+            let allThemes = try reader.allThemeNames()
+            let client = ClaudeClient(apiKey: apiKey, model: model)
+            let system = Prompts.systemPrompt
+            let user = Prompts.userPrompt(snapshot: snapshot, allThemeNames: allThemes)
+            let response = try await client.complete(system: system, user: user)
+            let patch = try decodePatch(response.text)
+
+            if !dryRun {
+                let writer = VaultWriter(vaultURL: vaultURL)
+                try writer.apply(patch: patch, notes: snapshot.unprocessed)
+            }
+
+            stats = IngestionStats(
+                notesProcessed: snapshot.unprocessed.count,
+                themesUpdated: patch.themeUpdates.count,
+                themesCreated: patch.newThemes.count,
+                contradictionsFlagged: (patch.contradictionsAppend?.isEmpty == false) ? 1 : 0,
+                inputTokens: response.inputTokens,
+                outputTokens: response.outputTokens,
+                cacheReadTokens: response.cacheReadTokens,
+                cacheWriteTokens: response.cacheWriteTokens
             )
         }
 
-        let allThemes = try reader.allThemeNames()
-        let client = ClaudeClient(apiKey: apiKey, model: model)
-        let system = Prompts.systemPrompt
-        let user = Prompts.userPrompt(snapshot: snapshot, allThemeNames: allThemes)
-        let response = try await client.complete(system: system, user: user)
-        let patch = try decodePatch(response.text)
-
-        if !dryRun {
-            let writer = VaultWriter(vaultURL: vaultURL)
-            try writer.apply(patch: patch, notes: snapshot.unprocessed)
-        }
-
-        // ---- non-fatal mindmap pass ----
+        // ---- non-fatal mindmap pass; runs even when there are no new notes
+        // so prompt/structural changes get picked up on the next launchd tick.
         if !dryRun {
             do {
                 let mm = MindmapEngine(vaultURL: vaultURL, apiKey: apiKey, model: model)
-                let stats = try await mm.run()
-                FileHandle.standardError.write(Data("mindmap: \(stats.opsApplied) ops, \(stats.insightsCount) insights\n".utf8))
+                let mmStats = try await mm.run()
+                FileHandle.standardError.write(Data("mindmap: \(mmStats.opsApplied) ops, \(mmStats.insightsCount) insights\n".utf8))
             } catch {
                 FileHandle.standardError.write(Data("mindmap: skipped — \(error.localizedDescription)\n".utf8))
             }
         }
 
-        return IngestionStats(
-            notesProcessed: snapshot.unprocessed.count,
-            themesUpdated: patch.themeUpdates.count,
-            themesCreated: patch.newThemes.count,
-            contradictionsFlagged: (patch.contradictionsAppend?.isEmpty == false) ? 1 : 0,
-            inputTokens: response.inputTokens,
-            outputTokens: response.outputTokens,
-            cacheReadTokens: response.cacheReadTokens,
-            cacheWriteTokens: response.cacheWriteTokens
-        )
+        return stats
     }
 
     private func decodePatch(_ text: String) throws -> IngestionPatch {
