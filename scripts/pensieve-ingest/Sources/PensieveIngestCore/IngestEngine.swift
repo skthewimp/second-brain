@@ -17,39 +17,30 @@ public struct IngestEngine {
         let reader = VaultReader(vaultURL: vaultURL)
         let snapshot = try reader.snapshot()
 
-        var stats = IngestionStats(
-            notesProcessed: 0, themesUpdated: 0, themesCreated: 0,
-            contradictionsFlagged: 0, inputTokens: 0, outputTokens: 0,
-            cacheReadTokens: 0, cacheWriteTokens: 0
-        )
-
-        if !snapshot.unprocessed.isEmpty {
-            let allThemes = try reader.allThemeNames()
-            let client = ClaudeClient(apiKey: apiKey, model: model)
-            let system = Prompts.systemPrompt
-            let user = Prompts.userPrompt(snapshot: snapshot, allThemeNames: allThemes)
-            let response = try await client.complete(system: system, user: user)
-            let patch = try decodePatch(response.text)
-
-            if !dryRun {
-                let writer = VaultWriter(vaultURL: vaultURL)
-                try writer.apply(patch: patch, notes: snapshot.unprocessed)
-            }
-
-            stats = IngestionStats(
-                notesProcessed: snapshot.unprocessed.count,
-                themesUpdated: patch.themeUpdates.count,
-                themesCreated: patch.newThemes.count,
-                contradictionsFlagged: (patch.contradictionsAppend?.isEmpty == false) ? 1 : 0,
-                inputTokens: response.inputTokens,
-                outputTokens: response.outputTokens,
-                cacheReadTokens: response.cacheReadTokens,
-                cacheWriteTokens: response.cacheWriteTokens
+        guard !snapshot.unprocessed.isEmpty else {
+            return IngestionStats(
+                notesProcessed: 0, themesUpdated: 0, themesCreated: 0,
+                contradictionsFlagged: 0, inputTokens: 0, outputTokens: 0,
+                cacheReadTokens: 0, cacheWriteTokens: 0
             )
         }
 
-        // ---- non-fatal mindmap pass; runs even when there are no new notes
-        // so prompt/structural changes get picked up on the next launchd tick.
+        let allThemes = try reader.allThemeNames()
+        let client = ClaudeClient(apiKey: apiKey, model: model)
+        let system = Prompts.systemPrompt
+        let user = Prompts.userPrompt(snapshot: snapshot, allThemeNames: allThemes)
+        let response = try await client.complete(system: system, user: user)
+        let patch = try decodePatch(response.text)
+
+        if !dryRun {
+            let writer = VaultWriter(vaultURL: vaultURL)
+            try writer.apply(patch: patch, notes: snapshot.unprocessed)
+        }
+
+        // ---- non-fatal mindmap pass; only fires when there were new notes,
+        // since wiki state actually changed. Forced standalone refresh is
+        // available via the `--rebuild-mindmap` CLI flag (driven by a
+        // separate weekly launchd entry).
         if !dryRun {
             do {
                 let mm = MindmapEngine(vaultURL: vaultURL, apiKey: apiKey, model: model)
@@ -60,7 +51,16 @@ public struct IngestEngine {
             }
         }
 
-        return stats
+        return IngestionStats(
+            notesProcessed: snapshot.unprocessed.count,
+            themesUpdated: patch.themeUpdates.count,
+            themesCreated: patch.newThemes.count,
+            contradictionsFlagged: (patch.contradictionsAppend?.isEmpty == false) ? 1 : 0,
+            inputTokens: response.inputTokens,
+            outputTokens: response.outputTokens,
+            cacheReadTokens: response.cacheReadTokens,
+            cacheWriteTokens: response.cacheWriteTokens
+        )
     }
 
     private func decodePatch(_ text: String) throws -> IngestionPatch {

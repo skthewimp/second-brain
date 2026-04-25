@@ -8,12 +8,17 @@ Voice-driven personal wiki. Talk into your phone, a structured wiki builds itsel
 Phone (iOS)                              Mac
 ┌─────────────────────┐                 ┌────────────────────────────┐
 │ 1. Record voice     │                 │ Obsidian (browse wiki)     │
-│ 2. WhisperKit       │   iCloud sync   │                            │
-│    (on-device)      │   via Obsidian  │ Daily launchd (10:17am):   │
-│ 3. Claude API       │ ─────────────→  │   pensieve-ingest (Swift)  │
-│    (theme extract)  │                 │   → direct Claude API call │
-│ 4. Save .md to      │                 │   → applies JSON patch     │
-│    Obsidian vault   │                 │                            │
+│ 2. WhisperKit       │   iCloud sync   │ wiki/mindmap.html in       │
+│    (on-device)      │   via Obsidian  │   browser (D3 radial tree) │
+│ 3. Claude API       │ ─────────────→  │                            │
+│    (theme extract)  │                 │ Daily 10:17am launchd:     │
+│ 4. Save .md to      │                 │   pensieve-ingest          │
+│    Obsidian vault   │                 │   → wiki ingest +          │
+│                     │                 │     mindmap (when new)     │
+│                     │                 │                            │
+│                     │                 │ Weekly Sunday 23:00:       │
+│                     │                 │   pensieve-ingest          │
+│                     │                 │     --rebuild-mindmap      │
 └─────────────────────┘                 └────────────────────────────┘
 ```
 
@@ -21,9 +26,15 @@ Phone (iOS)                              Mac
 Record audio → WhisperKit transcribes on-device → Claude API (claude-sonnet-4-6) extracts title, themes, emotional tone, key quotes, connections → saves structured markdown to `raw/` in Obsidian vault.
 
 ### Mac wiki ingestion
-`scripts/pensieve-ingest/` is a Swift Package. The `pensieve-ingest` binary (installed to `~/.local/bin/`) runs daily via a launchd user agent at `~/Library/LaunchAgents/com.karthikshashidhar.pensieve.ingest.plist`. It finds unprocessed notes in `raw/` (by diffing against `wiki/log.md`), makes a single direct Claude API call with the wiki state + new notes, and applies the returned JSON patch to theme pages, timeline, contradictions, log, and index. `PensieveIngestCore` (the library target) is platform-agnostic so it can be imported into the iOS app for phone-only ingestion later.
+`scripts/pensieve-ingest/` is a Swift Package. The `pensieve-ingest` binary (installed to `~/.local/bin/`) is driven by two launchd user agents:
 
-Requires Full Disk Access granted to `/Users/Karthik/.local/bin/pensieve-ingest` so launchd-spawned runs can access the iCloud vault. API key is set via `ANTHROPIC_API_KEY` in the launchd plist's `EnvironmentVariables`.
+- `~/Library/LaunchAgents/com.karthikshashidhar.pensieve.ingest.plist` — fires daily at **10:17am**. Default mode: wiki ingest of any new notes in `raw/` + (only when there were new notes) a mindmap pass that updates `wiki/mindmap.json` and `wiki/mindmap.html`. Quiet days cost nothing.
+- `~/Library/LaunchAgents/com.karthikshashidhar.pensieve.mindmap.plist` — fires weekly **Sunday 23:00**. Runs `pensieve-ingest --rebuild-mindmap` (mindmap pass only, skips wiki ingest). Guarantees the mindmap reflects current prompt logic at least once a week even on quiet weeks.
+- Manual: `pensieve-ingest --rebuild-mindmap` for ad-hoc rebuilds when iterating on the mindmap prompt or renderer.
+
+Each ingest finds unprocessed notes in `raw/` (by diffing against `wiki/log.md`), makes a single direct Claude API call with the wiki state + new notes, and applies the returned JSON patch to theme pages, timeline, contradictions, log, and index. The mindmap pass is a separate Claude call that maintains a stateful tree (`wiki/mindmap.json`) via diff/patch ops and renders a self-contained `wiki/mindmap.html` (D3 v7 from CDN, data inlined). `PensieveIngestCore` (the library target) is platform-agnostic so it can be imported into the iOS app for phone-only ingestion later.
+
+Requires Full Disk Access granted to `/Users/Karthik/.local/bin/pensieve-ingest` so launchd-spawned runs can access the iCloud vault. API key is set via `ANTHROPIC_API_KEY` in each launchd plist's `EnvironmentVariables`. **After every `cp` of a fresh release binary into `~/.local/bin/`, re-run `codesign --force --sign - ~/.local/bin/pensieve-ingest`** — launchd refuses to spawn unsigned binaries with `OS_REASON_CODESIGNING`.
 
 ### Obsidian vault location
 `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/SecondBrain/`
