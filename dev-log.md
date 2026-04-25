@@ -247,11 +247,93 @@ Key design choice: `PensieveIngestCore` is a separate library target with zero p
 - **iOS port path is clear.** Import `PensieveIngestCore` as a local SPM dependency in `project.yml`. The only nontrivial piece is swapping direct `FileManager` paths for the security-scoped bookmark code already in `ObsidianStorageService.swift`. This would eliminate the Mac dependency entirely and remove the TCC/FDA problem.
 - **The `.env` at `~/Documents/work/vibes/job-crm/.env` is where this project's `ANTHROPIC_API_KEY` lives.** There is no keychain entry for it.
 
+## Session 5 — Mindmap visualization (2026-04-25)
+
+**Built with:** Claude Code (Opus 4.7) + subagent-driven development
+
+**Goal:** A radial, interactive HTML mind-map of the voice-note corpus (`wiki/mindmap.html`), regenerated each ingest. Brain at center, themes radiating out, sub-themes cascading recursively. Surfaces depth/breadth mismatches as sidebar insights — "going too deep on minor theme", "should go deeper on important theme", etc.
+
+### Key prompts
+
+> "Look at this picture... around the brain maybe there are 5 broad themes. Then for some of those themes there might be some more narrower themes... I want to produce this kind of a visualization which could be interactive and things like that, so that we can zoom in and out wherever we want."
+
+> "should we have just one Claude call or multiple? I mean, I don't want to overload too much into one call... because there could be some context rot and stuff."
+
+That second push-back was the design's biggest fork. Initial proposal was a single Claude call emitting wiki ingest + mindmap patch together. Splitting into two sequential calls (ingest first, mindmap second using the freshly-rewritten theme pages) was the right call: smaller per-call payloads, isolated failure blast radius, and the mindmap pass benefits from seeing today's wiki state.
+
+### Architecture
+
+```
+pensieve-ingest (daily, launchd)
+  ├─ Call 1: existing ingest pass → applies IngestionPatch (untouched)
+  ├─ Call 2: NEW mindmap pass
+  │    in:  fresh wiki/themes/*.md + wiki/index.md + prior wiki/mindmap.json
+  │    out: MindmapPatch + insights
+  ├─ apply patch → wiki/mindmap.json
+  └─ MindmapRenderer → wiki/mindmap.html (D3 from CDN, data inlined)
+```
+
+Mindmap-pass failure is non-fatal — wiki ingest already succeeded; the engine logs `mindmap: skipped — <error>` to `/tmp/pensieve-ingest.log` and exits 0.
+
+### Decisions
+
+- **Standalone web page**, not Obsidian plugin or iOS native. Lowest friction; iOS port deferred to a later phase.
+- **Stateful tree, daily diff.** `wiki/mindmap.json` persists across runs; LLM emits a `MindmapPatch` of `add` / `update` / `move` / `merge` / `remove` ops. Stable IDs (dot-path slugs like `career.consulting.pricing`) → no layout jitter day-to-day, and growth deltas can be surfaced later.
+- **`noteCount` is computed deterministically by Swift**, not by the LLM. Source of truth: `source_count:` in each theme page's YAML frontmatter (which `VaultWriter.bumpFrontmatter` already maintains every ingest). The LLM is forbidden from emitting or mutating `noteCount` — eliminates a class of arithmetic errors. Sub-theme nodes deeper than the theme level carry `0` in v1 since no deterministic source exists below the theme level.
+- **Radial collapsible D3 layout**, matching the user's hand sketch. Brain at center, themes on first ring, sub-themes outer. Color = importance/noteCount mismatch (blue = under-explored important, red = over-explored minor, gray = balanced). Click node → opens the theme page via `obsidian://open?vault=SecondBrain&file=...`.
+- **Insights panel.** LLM emits up to 5 per run (`tooDeep` / `shouldGoDeeper` / `tooShallow` / `tooBroad`). Click an insight → zooms + centers the corresponding node.
+- **Single self-contained HTML.** D3 v7 from CDN, data inlined as `<script>const data = {...}</script>`. Project ethos is single-binary simplicity, no Node, no build chain. Renderer is ~80 lines of Swift string-templating.
+
+### Implementation breakdown (12 tasks, executed via subagent-driven flow)
+
+| Task | What | Tests |
+|------|------|-------|
+| 1 | XCTest target on the SPM package | smoke |
+| 2 | `MindmapState` / `MindmapNode` / `MindmapPatch` / `NodeOp` (5 cases) / `Insight` / `MindmapStats` | 7 (round-trip + 5 NodeOp variant decodes + Insight) |
+| 3 | `MindmapPatchApplier` (pure, recursive) | 6 (one per op + unknown-id) |
+| 4 | `MindmapNoteCountAggregator` reading `source_count:` from theme frontmatter | 3 |
+| 5 | `VaultReader.loadMindmapState()` + `themesDirectoryURL()` | 2 |
+| 6 | `VaultWriter.writeMindmap(state:html:)` | 1 |
+| 7 | `MindmapPrompts` (system prompt + user-prompt builder) | — |
+| 8 | `MindmapRenderer` (Swift → HTML with D3) | 1 |
+| 9 | `MindmapEngine` (orchestrates load → count → prompt → call → decode → patch → stamp → render → write) | (covered end-to-end) |
+| 10 | Wire into `IngestEngine.run()` as a non-fatal post-step | regression check |
+| 11 | End-to-end smoke against the live vault | 21 unit + 1 live |
+| 12 | This dev-log entry | — |
+
+### Problems hit
+
+1. **Codesigning invalidated by binary overwrite.** First smoke run hit `OS_REASON_CODESIGNING` on launchd kickstart — `state = not running, last exit reason = OS_REASON_CODESIGNING`. The newly-built release binary lacked a signature, and macOS refused to launch it. Fix: `codesign --force --sign - /Users/Karthik/.local/bin/pensieve-ingest` (adhoc-sign), then re-kickstart. This is the same gotcha already documented in `CLAUDE.md` for FDA invalidation after macOS updates — applies equally any time the binary is replaced.
+
+2. **`Bundle.module` resource lookup vs. `#file` paths.** First pass at the note-count-aggregator test loaded fixtures via `URL(fileURLWithPath: #file)`, bypassing SwiftPM's intended resource bundling. Worked locally but defeated the `resources: [.process("Fixtures")]` directive. Pushed a fix: switch to `resources: [.copy("Fixtures")]` (preserves directory structure verbatim) + `Bundle.module.url(forResource:withExtension:subdirectory: "Fixtures/sample-themes")`. With `.copy`, the bundle path includes the top-level `Fixtures/` prefix.
+
+3. **NodeOp Codable shape.** Swift's synthesized `Codable` for enums-with-associated-values produces JSON like `{"add": {"parentId": "...", "node": {...}}}` — the case name becomes the discriminator key. Plan-level reviewer caught the risk early; we locked the wire format with one decode test per variant (5 tests) before any code touched the LLM. Caught zero issues at smoke time.
+
+4. **Mindmap call failure must NOT block wiki ingest.** Implemented as a dedicated `do { try await mm.run() } catch { stderr <- "skipped — \(error)" }` block after the existing wiki ingest. The wiki is the canonical artifact; the mindmap is a downstream view.
+
+### First live run (2026-04-25 21:21:42)
+
+- 17 notes processed, 12 themes updated, 1 created, 1 contradiction flagged
+- `mindmap: 29 ops, 5 insights` — the new code path fired
+- Total runtime: 373.9s (call 1 + call 2)
+- Cost: **$0.37** (slightly higher than the historical ~$0.20 for similar batch sizes — call 2 added ~$0.005-0.01; rest is the larger 17-note backlog from skipped morning runs)
+- `wiki/mindmap.json`: 16KB, real recursive tree
+- `wiki/mindmap.html`: 18KB, opens in browser, radial layout renders
+
+### Out of scope for v1 (deferred)
+
+- Cross-links between themes (graph edges across the tree). v1 is a pure tree.
+- Time-series animation of brain growth.
+- Native iOS rendering — phase C.
+- Prompt caching for call 2 — same `cache_read/write: 0/0` problem as call 1; not urgent.
+- Lint/health pass integration.
+
 ## Stack
 
 - **iOS App:** Swift, SwiftUI, iOS 17+
 - **On-device transcription:** WhisperKit (Whisper base model, ~150MB)
 - **Theme extraction:** Claude API (claude-sonnet-4-6)
 - **Wiki browser:** Obsidian (free, iCloud sync)
-- **Wiki maintenance:** Swift binary (`pensieve-ingest`) invoking Claude API directly, scheduled via launchd at 10:17am daily. Replaces the old `scripts/ingest.sh` + Claude Code agentic path for ~33x cost savings.
+- **Wiki maintenance:** Swift binary (`pensieve-ingest`) invoking Claude API directly, scheduled via launchd at 10:17am daily. Two sequential calls per run since 2026-04-25: existing wiki ingest, then a new mindmap pass that maintains `wiki/mindmap.json` and regenerates `wiki/mindmap.html`. Replaces the old `scripts/ingest.sh` + Claude Code agentic path for ~33x cost savings on call 1.
+- **Mindmap rendering:** D3.js v7 from CDN, embedded in a single self-contained HTML file written by the Swift binary. Radial collapsible layout, insights sidebar, click-through to Obsidian via `obsidian://` URL.
 - **Project generation:** xcodegen
