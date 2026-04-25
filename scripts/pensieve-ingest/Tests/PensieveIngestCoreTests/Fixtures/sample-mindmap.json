@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "lastUpdated": "2026-04-24",
+  "root": {
+    "id": "root",
+    "label": "Brain",
+    "noteCount": 0,
+    "importance": 10,
+    "summary": "",
+    "sourcePages": [],
+    "children": [
+      {
+        "id": "career",
+        "label": "Career",
+        "noteCount": 12,
+        "importance": 9,
+        "summary": "work life",
+        "sourcePages": ["themes/career.md"],
+        "children": []
+      }
+    ]
+  }
+}

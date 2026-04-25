@@ -14,6 +14,7 @@ public struct VaultReader {
     private var timelineFile: URL { wikiDir.appendingPathComponent("timeline.md") }
     private var contradictionsFile: URL { wikiDir.appendingPathComponent("tensions/contradictions.md") }
     private var indexFile: URL { wikiDir.appendingPathComponent("index.md") }
+    private var mindmapFile: URL { wikiDir.appendingPathComponent("mindmap.json") }
 
     public func snapshot() throws -> VaultSnapshot {
         guard FileManager.default.fileExists(atPath: vaultURL.path) else {
@@ -105,4 +106,12 @@ public struct VaultReader {
         let arr = text.split(separator: "\n", omittingEmptySubsequences: false)
         return arr.suffix(lines).joined(separator: "\n")
     }
+
+    public func loadMindmapState() throws -> MindmapState? {
+        guard FileManager.default.fileExists(atPath: mindmapFile.path) else { return nil }
+        let data = try Data(contentsOf: mindmapFile)
+        return try JSONDecoder().decode(MindmapState.self, from: data)
+    }
+
+    public func themesDirectoryURL() -> URL { themesDir }
 }
