@@ -27,16 +27,25 @@ public struct IngestEngine {
 
         let allThemes = try reader.allThemeNames()
         let client = ClaudeClient(apiKey: apiKey, model: model)
-
         let system = Prompts.systemPrompt
         let user = Prompts.userPrompt(snapshot: snapshot, allThemeNames: allThemes)
-
         let response = try await client.complete(system: system, user: user)
         let patch = try decodePatch(response.text)
 
         if !dryRun {
             let writer = VaultWriter(vaultURL: vaultURL)
             try writer.apply(patch: patch, notes: snapshot.unprocessed)
+        }
+
+        // ---- non-fatal mindmap pass ----
+        if !dryRun {
+            do {
+                let mm = MindmapEngine(vaultURL: vaultURL, apiKey: apiKey, model: model)
+                let stats = try await mm.run()
+                FileHandle.standardError.write(Data("mindmap: \(stats.opsApplied) ops, \(stats.insightsCount) insights\n".utf8))
+            } catch {
+                FileHandle.standardError.write(Data("mindmap: skipped — \(error.localizedDescription)\n".utf8))
+            }
         }
 
         return IngestionStats(
