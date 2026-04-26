@@ -24,8 +24,8 @@ public struct VaultWriter {
         try prependTimelineEntries(patch.timelineEntries)
         for update in patch.themeUpdates { try applyThemeUpdate(update) }
         for new in patch.newThemes { try writeNewTheme(new) }
-        if let appendText = patch.contradictionsAppend, !appendText.isEmpty {
-            try appendToContradictions(appendText)
+        if let contradictions = patch.contradictions, !contradictions.isEmpty {
+            try appendToContradictions(contradictions)
         }
         if let newIndex = patch.indexRewrite, !newIndex.isEmpty {
             try newIndex.write(to: indexFile, atomically: true, encoding: .utf8)
@@ -109,14 +109,48 @@ public struct VaultWriter {
         try new.fullContent.write(to: file, atomically: true, encoding: .utf8)
     }
 
-    private func appendToContradictions(_ text: String) throws {
+    private func appendToContradictions(_ items: [IngestionPatch.Contradiction]) throws {
         var existing = (try? String(contentsOf: contradictionsFile, encoding: .utf8)) ?? ""
         if existing.isEmpty {
             existing = "---\ntitle: Contradictions\ntype: tension\n---\n\n# Contradictions\n"
         }
         if !existing.hasSuffix("\n") { existing += "\n" }
-        existing += text.hasPrefix("\n") ? text : "\n" + text
+        for item in items {
+            existing += "\n" + Self.renderContradiction(item) + "\n"
+        }
         try existing.write(to: contradictionsFile, atomically: true, encoding: .utf8)
+    }
+
+    static func renderContradiction(_ raw: IngestionPatch.Contradiction) -> String {
+        var c = raw
+        // Code-enforced invariant: `extracted` requires source note IDs on both sides.
+        // If missing, downgrade to `inferred` so the trust signal stays honest.
+        if c.kind == .extracted,
+           (c.before.sourceNoteId?.isEmpty ?? true) || (c.now.sourceNoteId?.isEmpty ?? true) {
+            c.kind = .inferred
+        }
+
+        func renderPos(_ label: String, _ p: IngestionPatch.Contradiction.Position) -> String {
+            var line = "> **\(label)** (\(p.date)"
+            if let id = p.sourceNoteId, !id.isEmpty {
+                line += " from [[\(id)]]"
+            }
+            line += "): \"\(p.quote)\""
+            return line
+        }
+
+        var lines: [String] = []
+        lines.append("> [!\(c.kind.rawValue)] \(c.now.date) — \(c.topic)")
+        lines.append(renderPos("Before", c.before))
+        lines.append(renderPos("Now", c.now))
+        if let nature = c.nature, !nature.isEmpty {
+            lines.append("> **Nature**: \(nature)")
+        }
+        if let themes = c.relatedThemes, !themes.isEmpty {
+            let links = themes.map { "[[\($0)]]" }.joined(separator: ", ")
+            lines.append("> **Related**: \(links)")
+        }
+        return lines.joined(separator: "\n")
     }
 
     private func bumpFrontmatter(_ content: String, sourceCountDelta: Int) -> String {

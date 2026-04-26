@@ -41,11 +41,26 @@ public enum Prompts {
     1. Never delete old entries from theme pages. The history is the value.
     2. Use `[[wikilinks]]` for cross-references (Obsidian-compatible).
     3. Use `> [!shift]` callouts when thinking has meaningfully changed on a theme.
-    4. Use `> [!contradiction]` callouts when a new note contradicts a previous position.
+    4. Use `> [!contradiction]` callouts inside theme pages when a new note contradicts a previous position. Structured contradictions for the contradictions page are emitted separately (see below).
     5. Err on the side of creating new theme pages. If something comes up twice, it deserves a page.
     6. Date every entry. Use the note's date from its frontmatter.
     7. Preserve Karthik's actual words in quotes when they capture something important.
     8. Theme slugs are lowercase, hyphenated: `mental-health`, `job-search`, `self-awareness`.
+
+    # Contradictions — provenance is critical
+    The contradictions page is the most valuable page in the wiki. A hallucinated contradiction \
+    is much worse than a missed one. Every contradiction MUST be tagged with one of three kinds:
+
+    - `extracted`: a literal verbatim clash between two dated quotes from notes. Both `before.quote` \
+      and `now.quote` MUST be verbatim text copied from the cited notes. Both `before.sourceNoteId` \
+      and `now.sourceNoteId` MUST be set. Highest trust.
+    - `inferred`: your reading that two positions are in tension, even if Karthik never said them \
+      as direct opposites. Quotes may be paraphrases. Cite source note IDs where possible. Medium trust.
+    - `ambiguous`: might be a contradiction, depends on interpretation. Use when uncertain. Karthik \
+      will judge. Low trust.
+
+    When in doubt, prefer `inferred` or `ambiguous` over `extracted`. Do NOT mark something \
+    `extracted` unless you can quote it verbatim from a specific note.
 
     # Output format
     Return ONLY a JSON object matching this exact schema. No prose, no markdown fences, no commentary.
@@ -72,12 +87,21 @@ public enum Prompts {
           "fullContent": "---\\ntitle: Relationships\\ntype: theme\\nlast_updated: 2026-04-10\\nsource_count: 1\\n---\\n\\n# Relationships\\n\\n## Current State\\n...\\n\\n## Evolution\\n\\n### 2026-04-10\\n> ...\\n- *Source: [[2026-04-10_0824]]*\\n"
         }
       ],
-      "contradictionsAppend": "\\n## 2026-04-10 Topic — Shift detected\\n\\n**Before** (2026-04-09): ...\\n**Now** (2026-04-10): ...\\n**Nature of shift**: reversal\\n**Related themes**: [[Career]]\\n",
+      "contradictions": [
+        {
+          "kind": "extracted",
+          "topic": "Career direction",
+          "before": { "date": "2026-03-12", "quote": "I want to go full-time consulting", "sourceNoteId": "2026-03-12_0824" },
+          "now":    { "date": "2026-04-10", "quote": "I want a salaried job",            "sourceNoteId": "2026-04-10_0905" },
+          "nature": "reversal",
+          "relatedThemes": ["career"]
+        }
+      ],
       "indexRewrite": null
     }
     ```
 
-    Set `contradictionsAppend` to null if there are no contradictions in this batch. Set \
+    Set `contradictions` to null or [] if there are no contradictions in this batch. Set \
     `indexRewrite` to null unless new theme pages were created, in which case provide the full \
     new contents of `index.md` listing all theme pages including the new ones. Every theme in \
     `themeUpdates` MUST exist in the provided existing themes. Every theme in `newThemes` MUST \

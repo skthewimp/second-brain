@@ -55,7 +55,7 @@ public struct IngestEngine {
             notesProcessed: snapshot.unprocessed.count,
             themesUpdated: patch.themeUpdates.count,
             themesCreated: patch.newThemes.count,
-            contradictionsFlagged: (patch.contradictionsAppend?.isEmpty == false) ? 1 : 0,
+            contradictionsFlagged: patch.contradictions?.count ?? 0,
             inputTokens: response.inputTokens,
             outputTokens: response.outputTokens,
             cacheReadTokens: response.cacheReadTokens,

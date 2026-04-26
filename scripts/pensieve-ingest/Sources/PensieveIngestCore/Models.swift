@@ -30,7 +30,7 @@ public struct IngestionPatch: Codable {
     public let timelineEntries: [String]
     public let themeUpdates: [ThemeUpdate]
     public let newThemes: [NewTheme]
-    public let contradictionsAppend: String?
+    public let contradictions: [Contradiction]?
     public let indexRewrite: String?
 
     public struct LogEntry: Codable {
@@ -48,6 +48,27 @@ public struct IngestionPatch: Codable {
     public struct NewTheme: Codable {
         public let name: String
         public let fullContent: String
+    }
+
+    public struct Contradiction: Codable {
+        public enum Kind: String, Codable {
+            case extracted
+            case inferred
+            case ambiguous
+        }
+
+        public struct Position: Codable {
+            public let date: String
+            public let quote: String
+            public let sourceNoteId: String?
+        }
+
+        public var kind: Kind
+        public let topic: String
+        public let before: Position
+        public let now: Position
+        public let nature: String?
+        public let relatedThemes: [String]?
     }
 }
 
