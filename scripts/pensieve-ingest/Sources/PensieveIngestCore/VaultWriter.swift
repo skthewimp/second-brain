@@ -6,6 +6,7 @@ public struct VaultWriter {
 
     private var wikiDir: URL { vaultURL.appendingPathComponent("wiki") }
     private var themesDir: URL { wikiDir.appendingPathComponent("themes") }
+    private var frameworksDir: URL { wikiDir.appendingPathComponent("frameworks") }
     private var logFile: URL { wikiDir.appendingPathComponent("log.md") }
     private var timelineFile: URL { wikiDir.appendingPathComponent("timeline.md") }
     private var contradictionsFile: URL { wikiDir.appendingPathComponent("tensions/contradictions.md") }
@@ -15,6 +16,7 @@ public struct VaultWriter {
 
     public func apply(patch: IngestionPatch, notes: [RawNote]) throws {
         try FileManager.default.createDirectory(at: themesDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: frameworksDir, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(
             at: contradictionsFile.deletingLastPathComponent(),
             withIntermediateDirectories: true
@@ -27,9 +29,57 @@ public struct VaultWriter {
         if let contradictions = patch.contradictions, !contradictions.isEmpty {
             try appendToContradictions(contradictions)
         }
+        for new in patch.newFrameworks ?? [] { try writeNewFramework(new) }
+        for update in patch.frameworkUpdates ?? [] { try applyFrameworkUpdate(update) }
+        for ref in patch.forwardReferences ?? [] { try applyForwardReference(ref) }
         if let newIndex = patch.indexRewrite, !newIndex.isEmpty {
             try newIndex.write(to: indexFile, atomically: true, encoding: .utf8)
         }
+    }
+
+    private func writeNewFramework(_ new: IngestionPatch.NewFramework) throws {
+        let file = frameworksDir.appendingPathComponent("\(new.slug).md")
+        try new.fullContent.write(to: file, atomically: true, encoding: .utf8)
+    }
+
+    private func applyFrameworkUpdate(_ update: IngestionPatch.FrameworkUpdate) throws {
+        let file = frameworksDir.appendingPathComponent("\(update.slug).md")
+        guard var content = try? String(contentsOf: file, encoding: .utf8) else { return }
+
+        content = bumpFrontmatter(content, sourceCountDelta: update.sourceCountDelta)
+
+        if let pattern = update.pattern, !pattern.isEmpty {
+            content = replaceSection(content, heading: "## The Pattern", newBody: pattern)
+        }
+
+        content = prependToSection(content, heading: "## Evidence", body: update.evidenceAppend)
+
+        try content.write(to: file, atomically: true, encoding: .utf8)
+    }
+
+    private func applyForwardReference(_ ref: IngestionPatch.ForwardReference) throws {
+        let file = themesDir.appendingPathComponent("\(ref.theme).md")
+        guard var content = try? String(contentsOf: file, encoding: .utf8) else { return }
+
+        let line = Self.renderForwardReference(ref)
+
+        if content.range(of: "## Forward References") != nil {
+            content = prependToSection(content, heading: "## Forward References", body: line)
+        } else {
+            // Append the section at the end.
+            if !content.hasSuffix("\n") { content += "\n" }
+            content += "\n## Forward References\n\n\(line)\n"
+        }
+
+        try content.write(to: file, atomically: true, encoding: .utf8)
+    }
+
+    static func renderForwardReference(_ ref: IngestionPatch.ForwardReference) -> String {
+        var lines: [String] = []
+        lines.append("> [!\(ref.kind.rawValue)] \(ref.from.date) → \(ref.to.date) — \(ref.summary)")
+        lines.append("> **From** [[\(ref.from.noteId)]]: \"\(ref.from.quote)\"")
+        lines.append("> **To** [[\(ref.to.noteId)]]: \"\(ref.to.quote)\"")
+        return lines.joined(separator: "\n")
     }
 
     public func writeMindmap(state: MindmapState, html: String) throws {
