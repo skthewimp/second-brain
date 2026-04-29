@@ -10,6 +10,7 @@ public struct VaultReader {
     private var rawDir: URL { vaultURL.appendingPathComponent("raw") }
     private var wikiDir: URL { vaultURL.appendingPathComponent("wiki") }
     private var themesDir: URL { wikiDir.appendingPathComponent("themes") }
+    private var frameworksDir: URL { wikiDir.appendingPathComponent("frameworks") }
     private var logFile: URL { wikiDir.appendingPathComponent("log.md") }
     private var timelineFile: URL { wikiDir.appendingPathComponent("timeline.md") }
     private var contradictionsFile: URL { wikiDir.appendingPathComponent("tensions/contradictions.md") }
@@ -29,14 +30,28 @@ public struct VaultReader {
         let timeline = (try? String(contentsOf: timelineFile, encoding: .utf8)) ?? ""
         let indexContent = (try? String(contentsOf: indexFile, encoding: .utf8)) ?? ""
 
+        let existingFrameworks = try loadAllFrameworks()
+
         return VaultSnapshot(
             unprocessed: unprocessed,
             existingThemes: existingThemes,
             contradictions: contradictions,
             timelineTail: tail(timeline, lines: 40),
             logTail: tail(logContent, lines: 30),
-            indexContent: indexContent
+            indexContent: indexContent,
+            existingFrameworks: existingFrameworks
         )
+    }
+
+    private func loadAllFrameworks() throws -> [String: String] {
+        guard FileManager.default.fileExists(atPath: frameworksDir.path) else { return [:] }
+        var out: [String: String] = [:]
+        let files = try FileManager.default.contentsOfDirectory(at: frameworksDir, includingPropertiesForKeys: nil)
+        for url in files where url.pathExtension == "md" {
+            let slug = url.deletingPathExtension().lastPathComponent
+            out[slug] = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+        }
+        return out
     }
 
     private func loadUnprocessedNotes(logContent: String) throws -> [RawNote] {

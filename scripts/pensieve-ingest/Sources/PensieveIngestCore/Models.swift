@@ -23,6 +23,7 @@ public struct VaultSnapshot {
     public let timelineTail: String
     public let logTail: String
     public let indexContent: String
+    public let existingFrameworks: [String: String]
 }
 
 public struct IngestionPatch: Codable {
@@ -32,6 +33,9 @@ public struct IngestionPatch: Codable {
     public let newThemes: [NewTheme]
     public let contradictions: [Contradiction]?
     public let indexRewrite: String?
+    public let frameworkUpdates: [FrameworkUpdate]?
+    public let newFrameworks: [NewFramework]?
+    public let forwardReferences: [ForwardReference]?
 
     public struct LogEntry: Codable {
         public let noteId: String
@@ -70,6 +74,42 @@ public struct IngestionPatch: Codable {
         public let nature: String?
         public let relatedThemes: [String]?
     }
+
+    /// A new framework page to write at `wiki/frameworks/<slug>.md`.
+    public struct NewFramework: Codable {
+        public let slug: String
+        public let fullContent: String
+    }
+
+    /// Append/refresh on an existing framework page.
+    public struct FrameworkUpdate: Codable {
+        public let slug: String
+        public let pattern: String?           // optional rewrite of "## The Pattern" body
+        public let evidenceAppend: String     // markdown to prepend inside "## Evidence"
+        public let sourceCountDelta: Int
+    }
+
+    /// Forward reference: a new note resolves / updates / realizes an older note.
+    /// Rendered into the `## Forward References` section of the named theme page.
+    public struct ForwardReference: Codable {
+        public enum Kind: String, Codable {
+            case resolves
+            case updates
+            case realizes
+        }
+
+        public struct Endpoint: Codable {
+            public let date: String
+            public let noteId: String
+            public let quote: String
+        }
+
+        public var kind: Kind
+        public let theme: String
+        public let from: Endpoint
+        public let to: Endpoint
+        public let summary: String
+    }
 }
 
 public struct IngestionStats {
@@ -77,10 +117,39 @@ public struct IngestionStats {
     public let themesUpdated: Int
     public let themesCreated: Int
     public let contradictionsFlagged: Int
+    public let frameworksUpdated: Int
+    public let frameworksCreated: Int
+    public let forwardReferencesAdded: Int
     public let inputTokens: Int
     public let outputTokens: Int
     public let cacheReadTokens: Int
     public let cacheWriteTokens: Int
+
+    public init(
+        notesProcessed: Int,
+        themesUpdated: Int,
+        themesCreated: Int,
+        contradictionsFlagged: Int,
+        frameworksUpdated: Int = 0,
+        frameworksCreated: Int = 0,
+        forwardReferencesAdded: Int = 0,
+        inputTokens: Int,
+        outputTokens: Int,
+        cacheReadTokens: Int,
+        cacheWriteTokens: Int
+    ) {
+        self.notesProcessed = notesProcessed
+        self.themesUpdated = themesUpdated
+        self.themesCreated = themesCreated
+        self.contradictionsFlagged = contradictionsFlagged
+        self.frameworksUpdated = frameworksUpdated
+        self.frameworksCreated = frameworksCreated
+        self.forwardReferencesAdded = forwardReferencesAdded
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.cacheReadTokens = cacheReadTokens
+        self.cacheWriteTokens = cacheWriteTokens
+    }
 
     public var estimatedCostUSD: Double {
         let inCost = Double(inputTokens) * 3.0 / 1_000_000
