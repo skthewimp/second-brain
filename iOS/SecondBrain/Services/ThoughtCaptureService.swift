@@ -75,7 +75,8 @@ class ThoughtCaptureService: ObservableObject {
         let note = ThoughtNote(
             filename: audioURL.lastPathComponent,
             audioURL: audioURL,
-            duration: duration
+            duration: duration,
+            source: .voice
         )
 
         notes.insert(note, at: 0)
@@ -88,36 +89,88 @@ class ThoughtCaptureService: ObservableObject {
         }
     }
 
+    // MARK: - Text / URL capture
+
+    /// Submit a free-form text capture. Detects URLs and routes through Claude.
+    func submitText(_ raw: String) {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let urls = Self.extractURLs(from: trimmed)
+        let source: Source = urls.isEmpty ? .text : .url
+
+        let note = ThoughtNote(
+            filename: "text-\(UUID().uuidString.prefix(8)).md",
+            audioURL: nil,
+            duration: 0,
+            source: source,
+            urls: urls,
+            rawText: trimmed
+        )
+
+        notes.insert(note, at: 0)
+        currentNote = note
+        saveNotes()
+
+        Task {
+            await processNote(id: note.id)
+        }
+    }
+
+    private static func extractURLs(from text: String) -> [URL] {
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return [] }
+        let range = NSRange(text.startIndex..., in: text)
+        let matches = detector.matches(in: text, options: [], range: range)
+        var seen = Set<String>()
+        var urls: [URL] = []
+        for m in matches {
+            if let url = m.url {
+                let s = url.absoluteString
+                if !seen.contains(s) {
+                    seen.insert(s)
+                    urls.append(url)
+                }
+            }
+        }
+        return urls
+    }
+
     // MARK: - Processing Pipeline
 
-    /// Run the full pipeline on a note: transcribe → Claude → save to wiki
+    /// Run the full pipeline on a note: transcribe (voice only) → Claude → save to wiki
     func processNote(id: String) async {
         guard let index = notes.firstIndex(where: { $0.id == id }) else { return }
 
         await MainActor.run { isProcessing = true }
         await clearError(id: id)
 
-        let audioURL = notes[index].audioURL
-        if !FileManager.default.fileExists(atPath: audioURL.path) {
-            await fail(id: id, stage: "Audio", error: "File missing at \(audioURL.lastPathComponent)")
-            return
-        }
+        let noteSource = notes[index].source
 
-        // Step 1: Transcribe
-        await updateStatus(id: id, status: .transcribing)
-        do {
-            let transcription = try await transcriptionService.transcribe(audioURL: audioURL)
-            await MainActor.run {
-                if let i = notes.firstIndex(where: { $0.id == id }) {
-                    notes[i].transcription = transcription
-                }
+        // Step 1: Transcribe (voice only). Text/URL notes skip straight to Claude.
+        if noteSource == .voice {
+            guard let audioURL = notes[index].audioURL else {
+                await fail(id: id, stage: "Audio", error: "Voice note missing audioURL")
+                return
             }
-        } catch {
-            await fail(id: id, stage: "Transcribe", error: error.localizedDescription)
-            return
-        }
+            if !FileManager.default.fileExists(atPath: audioURL.path) {
+                await fail(id: id, stage: "Audio", error: "File missing at \(audioURL.lastPathComponent)")
+                return
+            }
 
-        await updateStatus(id: id, status: .transcribed)
+            await updateStatus(id: id, status: .transcribing)
+            do {
+                let transcription = try await transcriptionService.transcribe(audioURL: audioURL)
+                await MainActor.run {
+                    if let i = notes.firstIndex(where: { $0.id == id }) {
+                        notes[i].transcription = transcription
+                    }
+                }
+            } catch {
+                await fail(id: id, stage: "Transcribe", error: error.localizedDescription)
+                return
+            }
+            await updateStatus(id: id, status: .transcribed)
+        }
 
         // Step 2: Process with Claude
         guard let claudeService = claudeService else {
@@ -128,8 +181,26 @@ class ThoughtCaptureService: ObservableObject {
         await updateStatus(id: id, status: .processing)
         let processed: ClaudeProcessedNote
         do {
-            let transcription = await MainActor.run { notes.first(where: { $0.id == id })?.transcription ?? "" }
-            processed = try await claudeService.process(transcription: transcription)
+            let snapshot = await MainActor.run { notes.first(where: { $0.id == id }) }
+            guard let snap = snapshot else { return }
+
+            switch snap.source {
+            case .voice:
+                let transcription = snap.transcription ?? ""
+                processed = try await claudeService.process(transcription: transcription)
+            case .text:
+                let result = try await claudeService.processInput(text: snap.rawText ?? "", urls: [], kind: .text)
+                processed = result.note
+            case .url:
+                let result = try await claudeService.processInput(text: snap.rawText ?? "", urls: snap.urls, kind: .url)
+                processed = result.note
+                await MainActor.run {
+                    if let i = notes.firstIndex(where: { $0.id == id }) {
+                        notes[i].articleFetched = result.articleFetched
+                    }
+                }
+            }
+
             await MainActor.run {
                 if let i = notes.firstIndex(where: { $0.id == id }) {
                     notes[i].summary = processed.summary.joined(separator: "\n")
@@ -248,7 +319,9 @@ class ThoughtCaptureService: ObservableObject {
     func deleteNote(id: String) {
         guard let index = notes.firstIndex(where: { $0.id == id }) else { return }
         let note = notes[index]
-        try? FileManager.default.removeItem(at: note.audioURL)
+        if let audioURL = note.audioURL {
+            try? FileManager.default.removeItem(at: audioURL)
+        }
         notes.remove(at: index)
         saveNotes()
     }

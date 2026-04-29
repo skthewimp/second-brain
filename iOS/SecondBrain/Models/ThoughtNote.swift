@@ -4,7 +4,7 @@ import Foundation
 struct ThoughtNote: Identifiable, Codable {
     let id: String
     let filename: String
-    let audioURL: URL
+    let audioURL: URL?
     let recordedAt: Date
     let duration: TimeInterval
     var status: ProcessingStatus
@@ -14,19 +14,27 @@ struct ThoughtNote: Identifiable, Codable {
     var emotionalTone: String?
     var savedToWiki: Bool
     var lastError: String?
+    var source: Source
+    var urls: [URL]
+    var articleFetched: Bool?
+    var rawText: String?
 
     init(id: String = UUID().uuidString,
          filename: String,
-         audioURL: URL,
+         audioURL: URL? = nil,
          recordedAt: Date = Date(),
-         duration: TimeInterval,
+         duration: TimeInterval = 0,
          status: ProcessingStatus = .recorded,
          transcription: String? = nil,
          summary: String? = nil,
          themes: [String]? = nil,
          emotionalTone: String? = nil,
          savedToWiki: Bool = false,
-         lastError: String? = nil) {
+         lastError: String? = nil,
+         source: Source = .voice,
+         urls: [URL] = [],
+         articleFetched: Bool? = nil,
+         rawText: String? = nil) {
         self.id = id
         self.filename = filename
         self.audioURL = audioURL
@@ -39,6 +47,37 @@ struct ThoughtNote: Identifiable, Codable {
         self.emotionalTone = emotionalTone
         self.savedToWiki = savedToWiki
         self.lastError = lastError
+        self.source = source
+        self.urls = urls
+        self.articleFetched = articleFetched
+        self.rawText = rawText
+    }
+
+    // Backwards compat: existing saved notes lack `source`/`urls`/`rawText`.
+    enum CodingKeys: String, CodingKey {
+        case id, filename, audioURL, recordedAt, duration, status
+        case transcription, summary, themes, emotionalTone, savedToWiki, lastError
+        case source, urls, articleFetched, rawText
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        filename = try c.decode(String.self, forKey: .filename)
+        audioURL = try c.decodeIfPresent(URL.self, forKey: .audioURL)
+        recordedAt = try c.decode(Date.self, forKey: .recordedAt)
+        duration = try c.decodeIfPresent(TimeInterval.self, forKey: .duration) ?? 0
+        status = try c.decode(ProcessingStatus.self, forKey: .status)
+        transcription = try c.decodeIfPresent(String.self, forKey: .transcription)
+        summary = try c.decodeIfPresent(String.self, forKey: .summary)
+        themes = try c.decodeIfPresent([String].self, forKey: .themes)
+        emotionalTone = try c.decodeIfPresent(String.self, forKey: .emotionalTone)
+        savedToWiki = try c.decodeIfPresent(Bool.self, forKey: .savedToWiki) ?? false
+        lastError = try c.decodeIfPresent(String.self, forKey: .lastError)
+        source = try c.decodeIfPresent(Source.self, forKey: .source) ?? .voice
+        urls = try c.decodeIfPresent([URL].self, forKey: .urls) ?? []
+        articleFetched = try c.decodeIfPresent(Bool.self, forKey: .articleFetched)
+        rawText = try c.decodeIfPresent(String.self, forKey: .rawText)
     }
 
     var formattedDuration: String {
@@ -60,6 +99,12 @@ struct ThoughtNote: Identifiable, Codable {
         formatter.dateFormat = "yyyy-MM-dd_HHmm"
         return "\(formatter.string(from: recordedAt)).md"
     }
+}
+
+enum Source: String, Codable {
+    case voice
+    case text
+    case url
 }
 
 enum ProcessingStatus: String, Codable {

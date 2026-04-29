@@ -13,12 +13,116 @@ class ClaudeProcessingService {
         self.apiKey = apiKey
     }
 
-    /// Process a transcription into structured note data.
+    struct ProcessResult {
+        let note: ClaudeProcessedNote
+        let articleFetched: Bool?  // nil when no URLs in input
+    }
+
+    /// Process a transcription into structured note data. (voice path)
     func process(transcription: String) async throws -> ClaudeProcessedNote {
-        let systemPrompt = """
-        You are processing a voice note for a personal thought-capture system called Pensieve. \
-        The user records stream-of-consciousness thoughts throughout their day. Your job is to \
-        extract structure from the raw transcription.
+        let result = try await processInput(text: transcription, urls: [], kind: .voice)
+        return result.note
+    }
+
+    /// Process typed text and/or URLs.
+    /// - kind: .text (no URLs) or .url (with URLs to fetch)
+    func processInput(text: String, urls: [URL], kind: Source) async throws -> ProcessResult {
+        let systemPrompt = Self.buildSystemPrompt(kind: kind)
+        let userMessage = Self.buildUserMessage(text: text, urls: urls, kind: kind)
+
+        var body: [String: Any] = [
+            "model": model,
+            "max_tokens": 2048,
+            "system": systemPrompt,
+            "messages": [
+                ["role": "user", "content": userMessage]
+            ]
+        ]
+
+        // Enable server-side web fetch when URLs present.
+        if kind == .url, !urls.isEmpty {
+            body["tools"] = [[
+                "type": "web_fetch_20250910",
+                "name": "web_fetch",
+                "max_uses": urls.count
+            ]]
+        }
+
+        var urlRequest = URLRequest(url: baseURL)
+        urlRequest.httpMethod = "POST"
+        urlRequest.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+        urlRequest.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        urlRequest.addValue("application/json", forHTTPHeaderField: "content-type")
+        // web_fetch is a beta tool — declare opt-in.
+        if kind == .url, !urls.isEmpty {
+            urlRequest.addValue("web-fetch-2025-09-10", forHTTPHeaderField: "anthropic-beta")
+        }
+        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            let responseBody = String(data: data, encoding: .utf8) ?? "no body"
+            throw ClaudeError.apiError(statusCode: statusCode, message: responseBody)
+        }
+
+        // Parse content blocks. With tools, multiple blocks may be present;
+        // we want the final text block (Claude's structured JSON answer).
+        // We also inspect tool_use / web_fetch_tool_result blocks to detect fetch failures.
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let contentBlocks = json["content"] as? [[String: Any]] else {
+            throw ClaudeError.invalidJSON
+        }
+
+        var textOut: String?
+        var anyFetchAttempted = false
+        var anyFetchFailed = false
+
+        for block in contentBlocks {
+            let type = block["type"] as? String ?? ""
+            switch type {
+            case "text":
+                textOut = block["text"] as? String
+            case "web_fetch_tool_result", "tool_result":
+                anyFetchAttempted = true
+                // Anthropic wraps result content. Detect explicit error markers.
+                if let content = block["content"] as? [String: Any],
+                   (content["type"] as? String) == "web_fetch_tool_result_error" {
+                    anyFetchFailed = true
+                } else if let isError = block["is_error"] as? Bool, isError {
+                    anyFetchFailed = true
+                }
+            case "server_tool_use":
+                anyFetchAttempted = true
+            default:
+                break
+            }
+        }
+
+        guard let text = textOut else { throw ClaudeError.noTextInResponse }
+
+        let jsonString = extractJSON(from: text)
+        guard let jsonData = jsonString.data(using: .utf8) else { throw ClaudeError.invalidJSON }
+        let processed = try JSONDecoder().decode(ClaudeProcessedNote.self, from: jsonData)
+
+        let fetched: Bool?
+        if kind == .url, !urls.isEmpty {
+            // If we never saw any fetch tool activity, treat as failure (Claude didn't fetch).
+            fetched = anyFetchAttempted && !anyFetchFailed
+        } else {
+            fetched = nil
+        }
+
+        return ProcessResult(note: processed, articleFetched: fetched)
+    }
+
+    private static func buildSystemPrompt(kind: Source) -> String {
+        let base = """
+        You are processing a thought capture for a personal thought-capture system called Pensieve. \
+        The user records stream-of-consciousness thoughts throughout their day — sometimes spoken \
+        aloud and transcribed, sometimes typed, sometimes a reaction to something they read online. \
+        Your job is to extract structure from the raw input.
 
         Return a JSON object with exactly these fields:
         {
@@ -33,67 +137,50 @@ class ClaudeProcessingService {
         Rules:
         - themes should be lowercase, simple words (e.g., "career", "health", "priorities", "relationships", "money", "creativity")
         - Use consistent theme names across notes (prefer common words)
-        - keyQuotes should be verbatim phrases from the transcription that are particularly revealing or well-put
+        - keyQuotes should be verbatim phrases from the input that are particularly revealing or well-put
         - connections are speculative — what other life areas might this relate to?
         - emotionalTone: one of: reflective, anxious, excited, frustrated, hopeful, confused, determined, sad, neutral, angry, grateful
         - Return ONLY the JSON object, no other text
         """
 
-        let request = ClaudeAPIRequest(
-            model: model,
-            max_tokens: 1024,
-            messages: [
-                ClaudeMessage(role: "user", content: """
-                    Process this voice note transcription:
+        switch kind {
+        case .voice, .text:
+            return base
+        case .url:
+            return base + """
 
-                    \(transcription)
-                    """)
-            ]
-        )
 
-        var urlRequest = URLRequest(url: baseURL)
-        urlRequest.httpMethod = "POST"
-        urlRequest.addValue(apiKey, forHTTPHeaderField: "x-api-key")
-        urlRequest.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        urlRequest.addValue("application/json", forHTTPHeaderField: "content-type")
-
-        // Build the request body manually to include system prompt
-        let body: [String: Any] = [
-            "model": model,
-            "max_tokens": 1024,
-            "system": systemPrompt,
-            "messages": [
-                ["role": "user", "content": "Process this voice note transcription:\n\n\(transcription)"]
-            ]
-        ]
-
-        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
-
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            let responseBody = String(data: data, encoding: .utf8) ?? "no body"
-            throw ClaudeError.apiError(statusCode: statusCode, message: responseBody)
+            URL CONTEXT:
+            The user has shared one or more URLs along with their own text. Use the web_fetch tool \
+            to fetch each URL. Treat the article content as the thing the user is reacting to, and \
+            the user's text as their take on it. Themes, key quotes, and connections should reflect \
+            the user's reaction (their take), not just summarize the article. If a fetch fails, \
+            proceed using the user's text alone.
+            """
         }
+    }
 
-        // Parse the Claude response
-        let claudeResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
+    private static func buildUserMessage(text: String, urls: [URL], kind: Source) -> String {
+        switch kind {
+        case .voice:
+            return "Process this voice note transcription:\n\n\(text)"
+        case .text:
+            return "Process this typed thought:\n\n\(text)"
+        case .url:
+            let urlList = urls.map { "- \($0.absoluteString)" }.joined(separator: "\n")
+            let userTake = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? "(no additional text — extract from articles only)"
+                : text
+            return """
+            The user is reacting to these URLs:
+            \(urlList)
 
-        guard let textBlock = claudeResponse.content.first(where: { $0.type == "text" }),
-              let text = textBlock.text else {
-            throw ClaudeError.noTextInResponse
+            User's take:
+            \(userTake)
+
+            Fetch each URL and return the structured JSON.
+            """
         }
-
-        // Extract JSON from the response (Claude might wrap it in markdown code blocks)
-        let jsonString = extractJSON(from: text)
-
-        guard let jsonData = jsonString.data(using: .utf8) else {
-            throw ClaudeError.invalidJSON
-        }
-
-        let processedNote = try JSONDecoder().decode(ClaudeProcessedNote.self, from: jsonData)
-        return processedNote
     }
 
     /// Extract JSON from Claude's response, handling possible markdown wrapping

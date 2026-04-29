@@ -86,14 +86,48 @@ class ObsidianStorageService: ObservableObject {
         let summaryBullets = processed.summary.map { "- \($0)" }.joined(separator: "\n")
         let keyQuotes = processed.keyQuotes.map { "> \($0)" }.joined(separator: "\n\n")
 
+        // Source-specific frontmatter
+        var extraFrontmatter = "source: \(note.source.rawValue)\n"
+        if !note.urls.isEmpty {
+            let urlsYAML = note.urls.map { "  - \($0.absoluteString)" }.joined(separator: "\n")
+            extraFrontmatter += "urls:\n\(urlsYAML)\n"
+        }
+        if let af = note.articleFetched {
+            extraFrontmatter += "article_fetched: \(af)\n"
+        }
+
+        // Body section: voice → "Transcription"; text/url → "Raw Input" + URL list
+        let bodySectionTitle: String
+        let bodySectionContent: String
+        switch note.source {
+        case .voice:
+            bodySectionTitle = "Transcription"
+            bodySectionContent = note.transcription ?? "*No transcription available.*"
+        case .text:
+            bodySectionTitle = "Raw Input"
+            bodySectionContent = note.rawText ?? "*No raw input.*"
+        case .url:
+            bodySectionTitle = "Raw Input"
+            let urlBlock = note.urls.map { "- <\($0.absoluteString)>" }.joined(separator: "\n")
+            let take = note.rawText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            bodySectionContent = """
+            **Sources:**
+            \(urlBlock)
+
+            **User's take:**
+            \(take.isEmpty ? "*(no text — derived from articles only)*" : take)
+            """
+        }
+
+        let durationLine = note.source == .voice ? "duration: \(note.formattedDuration)\n" : ""
+
         let markdown = """
         ---
         date: \(dateFormatter.string(from: note.recordedAt))
-        duration: \(note.formattedDuration)
-        themes: [\(themesYAML)]
+        \(durationLine)themes: [\(themesYAML)]
         emotional_tone: \(processed.emotionalTone)
         title: "\(processed.title)"
-        ---
+        \(extraFrontmatter)---
 
         # \(processed.title)
 
@@ -106,8 +140,8 @@ class ObsidianStorageService: ObservableObject {
         ## Connections
         \(processed.connections.map { "- \($0)" }.joined(separator: "\n"))
 
-        ## Transcription
-        \(note.transcription ?? "*No transcription available.*")
+        ## \(bodySectionTitle)
+        \(bodySectionContent)
         """
 
         try markdown.write(to: fileURL, atomically: true, encoding: .utf8)

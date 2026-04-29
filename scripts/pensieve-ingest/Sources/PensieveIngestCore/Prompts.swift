@@ -37,6 +37,13 @@ public enum Prompts {
     - *Source: [[YYYY-MM-DD_HHMM]]*
     ```
 
+    # Note sources
+    Notes have a `source` field in their frontmatter: `voice` (transcribed audio), `text` \
+    (typed thought), or `url` (typed reaction with one or more linked articles). When `source: url`, \
+    the frontmatter has a `urls:` list. Cite those URLs in `log.md` entries and contradiction \
+    `before`/`now` blocks where they're the substantive source. The body section "Raw Input" stands \
+    in for "Transcription" on text/url notes.
+
     # Rules
     1. Never delete old entries from theme pages. The history is the value.
     2. Use `[[wikilinks]]` for cross-references (Obsidian-compatible).

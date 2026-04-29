@@ -13,9 +13,43 @@ struct NoteDetailView: View {
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text(note.formattedDuration)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                        if note.source == .voice {
+                            Text(note.formattedDuration)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text(note.source == .url ? "URL" : "Text")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    if !note.urls.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(note.urls, id: \.self) { url in
+                                Link(destination: url) {
+                                    Text(url.absoluteString)
+                                        .font(.caption)
+                                        .foregroundColor(.indigo)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                            }
+                            if let af = note.articleFetched, !af {
+                                Label("Article fetch failed — themes from your text only", systemImage: "exclamationmark.triangle")
+                                    .font(.caption2)
+                                    .foregroundColor(.orange)
+                            }
+                        }
+                    }
+
+                    if let raw = note.rawText, note.source != .voice {
+                        Text(raw)
+                            .font(.body)
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(.secondarySystemBackground))
+                            .cornerRadius(8)
                     }
 
                     if let tone = note.emotionalTone {

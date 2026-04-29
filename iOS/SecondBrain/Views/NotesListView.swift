@@ -62,9 +62,19 @@ struct NoteRow: View {
                     Text("·")
                         .foregroundColor(.secondary)
 
-                    Text(note.formattedDuration)
+                    Image(systemName: sourceIcon)
                         .font(.caption)
                         .foregroundColor(.secondary)
+
+                    if note.source == .voice {
+                        Text(note.formattedDuration)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else if note.source == .url {
+                        Text("\(note.urls.count) link\(note.urls.count == 1 ? "" : "s")")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
 
                     if let tone = note.emotionalTone {
                         Text("·")
@@ -111,6 +121,14 @@ struct NoteRow: View {
             return String(summary.prefix(60))
         }
         return note.status.displayText
+    }
+
+    var sourceIcon: String {
+        switch note.source {
+        case .voice: return "mic.fill"
+        case .text: return "text.bubble"
+        case .url: return "link"
+        }
     }
 
     var statusIcon: some View {
