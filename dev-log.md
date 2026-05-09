@@ -372,6 +372,51 @@ Caveat: SessionEnd reason `other` covers app crashes — not guaranteed. …
 - Done. Hook wired, script tested. Open `/hooks` or restart once to activate for this session.
 
 
+## Session 79e89734 — 2026-04-29T20:07:54 (reason: prompt_input_exit)
+
+(Recovered from a stray `scripts/pensieve-ingest/dev-log.md` that the SessionEnd hook had written into the wrong directory. Merged here to keep the canonical log complete.)
+
+### Prompts
+
+- seems like a lot of people have been building secondbrain apps of late. can you scan a few (~10) of them (go by stars on github) and summarise what htey have, and see if there are any features we need to include in this one?
+- actually we should build text + URL ingest as well
+- A. in ios only. on the main app page there is too much real estate to old notes.that is not necessary and can be replaced by a text box. could include both free form text (sometimtes i'm in environements where it's loud and i can't speak in)and links (wiht contexts). when there is a link in this we need a way to know about the article and update the notes accordingly
+- A / A / A / A / B + Y / ok x4 (design fork answers — see assistant block for the questions these resolve)
+- just go ahead and code
+- make sure curretn github is updated. create a branch and make this and then test this. and then merge
+- no old notes will get wiped right? wshen i reinstall
+- ok can reinstal. i can just go to xcode and do ti right?
+- ok this works. merge and push.
+- update github documentation to wipe all references to ADHD and therapy. the about has this. also rewrite blogpost based on everything that we've done so far.
+- ok now let's get back to the long list you'd made on things we can import from other people's second brains
+- write all of this into the deferred list. and then is there asomething more interesting from other repos?
+- a and b are both good and worth implementing now
+- consolidate - can we do this in the daily 1017 pass?
+- 5 new notes across >= 2 themes
+- A / A
+- ok all built ? and do i need to update my app?
+
+### Assistant actions
+
+**Repo scan + gap analysis.** Pulled top ~10 starred "second brain" repos (khoj-ai/khoj 34k, arscontexta 3.2k, Smart2Brain, etc.). Filtered out non-AI/whiteboard tools. Output: a deferred-list of ideas worth porting (MCP server, git auto-commit, weekly diff, synthesis, forward refs) — these landed as items 11-13 in the project `CLAUDE.md` deferred list.
+
+**Text + URL ingest (shipped).** Brainstormed design forks one at a time: input surface (iOS only), text box shape (single freeform, auto-detect URLs), article fetching (Claude API server-side `web_fetch` tool — no on-device HTML parsing), raw-note schema (same schema + `source: voice|text|url` + `urls:` frontmatter), main-page layout (record button on top, text box below, notes list moves behind a nav icon), failure modes (save anyway w/ `article_fetched: false`, allow multiple URLs).
+
+Spec written at `docs/superpowers/specs/2026-04-29-text-url-ingest-design.md`. Implementation: `Source` enum + optional `audioURL`/`urls`/`articleFetched`/`rawText` on `ThoughtNote`, `ClaudeProcessingService.processInput(text:urls:kind:)` w/ `web_fetch` tool + beta header, `submitText(_:)` on `ThoughtCaptureService` w/ `NSDataDetector`, source-aware `ObsidianStorageService`. iOS simulator + Mac ingest both built clean. Merged `feature/text-url-ingest` → `main` (commits `c5dbba2` spec, `45adcac` ios, `e46c336` merge).
+
+**Reinstall safety.** Confirmed: vault contents (raw notes, wiki pages, contradictions, mindmap) are independent of the iOS app sandbox and survive reinstall. Wiped on reinstall: `Documents/Recordings/notes.json`, audio `.m4a` files, WhisperKit ~150MB cache, vault security-scoped bookmark. User re-pairs vault + re-enters API key after install.
+
+**Repo description + ADHD/therapy scrub.** Updated GitHub "About" line, removed therapist references from `dev-log.md` genesis section, dropped "therapy prep" from `docs/2026-04-25-project-review.md`, fully rewrote `blog-post.md` (career-anxiety loop opening, no ADHD framing, ~700-900 words).
+
+**Synthesis + forward references (shipped).** Second pass on the deferred list flagged two items as sharper than the original 11-13:
+- *(a) Synthesis pass.* Periodic upward synthesis across themes — "across themes A, B, C, what underlying belief connects them?" Output: `wiki/frameworks/<slug>.md`, threshold-gated (≥5 source notes, ≥2 themes) to avoid noisy frameworks on thin data. Runs in the daily 10:17 pass after per-note ingest.
+- *(b) Forward references.* New `## Forward References` section appended to each `wiki/themes/<slug>.md` (never touches existing Evolution entries — preserves the "never delete old entries" invariant). Tagged `resolves` / `updates` / `realizes`, all requiring verbatim quotes from both source notes (same trust model as contradiction provenance).
+
+Implementation in `IngestionPatch` schema + `Prompts.swift` + `VaultWriter` + `IngestEngine`. Live dry-run: 3 notes → 1 forward ref + 0 frameworks (correctly under threshold). Cost flag: $0.17 vs prior ~$0.01-0.03/run — prompt expansion from new sections + existing-frameworks state injection. Will warm on subsequent runs once cache fills.
+
+Merged via `feature/synthesis-and-forward-refs` → `main` (commit `2969d9d`). Mac-only change — no iOS update needed since the new behaviour lives entirely in the ingest pass.
+
+
 ## Session 7b1c0bc6 — 2026-05-01T12:50:26 (reason: prompt_input_exit)
 
 ### Prompts
