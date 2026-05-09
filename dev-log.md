@@ -337,3 +337,201 @@ Mindmap-pass failure is non-fatal — wiki ingest already succeeded; the engine 
 - **Wiki maintenance:** Swift binary (`pensieve-ingest`) invoking Claude API directly, scheduled via launchd at 10:17am daily. Two sequential calls per run since 2026-04-25: existing wiki ingest, then a new mindmap pass that maintains `wiki/mindmap.json` and regenerates `wiki/mindmap.html`. Replaces the old `scripts/ingest.sh` + Claude Code agentic path for ~33x cost savings on call 1.
 - **Mindmap rendering:** D3.js v7 from CDN, embedded in a single self-contained HTML file written by the Swift binary. Radial collapsible layout, insights sidebar, click-through to Obsidian via `obsidian://` URL.
 - **Project generation:** xcodegen
+
+## Session 0e9d3dbb — 2026-04-29T16:06:16 (reason: prompt_input_exit)
+
+### Prompts
+
+- i need to buid and "exit" skill - every time i close a conversation, the conversation including prompts need to be updated to the folder's devlog
+- yes this is godo - sessionsend hook and per project devlog in cwd
+- another related thing - when a session starts and this devlog exists, ingest and compact it.
+- ok good. anything else elft to be done her?
+- ok let it be.
+
+### Assistant actions
+
+- Two forks before build:
+
+1. **Trigger**: auto on session end (SessionEnd hook in settings.json) vs manual `/exit` slash command user run before close. Hook = automatic but fires once per session end (no chance to review). Slash command = explicit, you control when.
+2. **Devlog target**: which folder? Per-project (cwd `.claude/devlog.md`?) or fixed path (e.g. `dev-log.md` per CLAUDE.md new-project workflow)? And append or overwrite?
+3. **Content**: full transcript JSONL → markdown? Or just user prompts + summary? Strip PII per your CLAUDE.md rule?
+
+Source data exist: `~/.claude/projects/<encode…
+- Hook live. Build summary:
+
+- **Script**: `~/.claude/hooks/session-end-devlog.py` — reads transcript JSONL via stdin payload, filters out injected meta msgs / tool results, appends real user prompts + assistant text replies to `<cwd>/dev-log.md`.
+- **Hook**: `SessionEnd` in `~/.claude/settings.json` — fires script on session end (clear/logout/exit/other).
+- **Behavior**: per-project `dev-log.md` in cwd. Append mode. New session = new `## Session <id> — <timestamp>` block. No-op if no real user prompts (e.g. instant abort).
+
+Caveat: SessionEnd reason `other` covers app crashes — not guaranteed. …
+- Few open items, your call:
+
+1. **Reload to activate**: this session started before settings change. Open `/hooks` once or restart so the watcher picks up `SessionEnd`. Otherwise next `/clear` won't fire it.
+2. **PII stripping**: your global CLAUDE.md says dev-logs should have "PII stripped out". Hook does no scrubbing. Options: (a) post-edit manually before commit, (b) add a regex pass (emails/keys/phone), (c) skip — current behavior.
+3. **Auto-commit?**: your auto-push rule covers commits *you ask for*. Hook just appends file - no git action. Want hook to also `git add dev-log.md && git commi…
+- Done. Hook wired, script tested. Open `/hooks` or restart once to activate for this session.
+
+
+## Session 7b1c0bc6 — 2026-05-01T12:50:26 (reason: prompt_input_exit)
+
+### Prompts
+
+- again i'mgetting "second gbrain not available" on my phone
+- this is a weekly thing
+- nno i thought it was some app developer thing?
+- <command-name>/exit</command-name>
+  ```
+              <command-message>exit</command-message>
+            <command-args></command-args>
+  ```
+- <local-command-stdout>Catch you later!</local-command-stdout>
+
+### Assistant actions
+
+- String not in app code. Likely iOS Files picker showing iCloud Obsidian container offloaded.
+
+Where you see it? On launch / vault pick / save? Screenshot help.
+
+Common fix:
+1. Open Obsidian iOS app once → forces iCloud container mount.
+2. Files app → Browse → iCloud Drive → tap `Obsidian/SecondBrain` to download.
+3. Settings → iCloud → make sure Obsidian toggle on, storage not full.
+4. If bookmark stale: Pensieve → Settings → Unlink Vault → re-pick.
+
+Also check `/tmp` not relevant on phone; iOS log via Console.app while attached. Confirm trigger before patching code.
+- iCloud evicting offloaded vault between uses. iOS reclaims storage on apps not opened in days.
+
+Fast fix (no code):
+- Files app → iCloud Drive → long-press `Obsidian` folder → **Keep Downloaded**.
+- Also pin `SecondBrain` subfolder same way.
+- Open Obsidian iOS app weekly (or disable Offload Unused Apps for it: Settings → General → iPhone Storage → Obsidian → turn off offloading).
+
+Code fix (more durable): on app launch + before save, call `FileManager.default.startDownloadingUbiquitousItem(at: vaultURL)` and wait briefly. Also re-resolve bookmark if `isUbiquitousItem` + not downloaded.
+
+Want …
+- Ah — free Apple Developer cert. Provisioning profile expire 7 days. Classic weekly sideload death.
+
+Fix options:
+1. **Paid Apple Developer ($99/yr)** → cert valid 1 year. Real fix.
+2. Re-build + re-install via Xcode every week (current state).
+3. AltStore / SideStore → auto-resigns in background over Wi-Fi, no Mac needed weekly.
+
+Team `6APL9VM8C3` — if free, that's the cause. Confirm in Xcode → Signing & Capabilities → "Personal Team" = free.
+
+
+## Session 90e32cc0 — 2026-05-05T14:45:59 (reason: prompt_input_exit)
+
+### Prompts
+
+- has the daily and weekly process been running as scheduled?
+- run now
+- <command-name>/config</command-name>
+  ```
+              <command-message>config</command-message>
+            <command-args></command-args>
+  ```
+- <local-command-stdout>Set defaultPermissionMode to [1macceptEdits[22m</local-command-stdout>
+- done?
+- done?
+- i';ve given access now. can you check?
+- <command-name>/exit</command-name>
+  ```
+              <command-message>exit</command-message>
+            <command-args></command-args>
+  ```
+- <local-command-stdout>See ya!</local-command-stdout>
+
+### Assistant actions
+
+- Both jobs fire on schedule. But broken since **2026-05-02**.
+
+- daily 10:17: fires every day, but last 4 runs error `The file "…md" couldn't be opened`
+- weekly Sunday 23:00 (2026-05-03): also failed same way
+- last successful run: 2026-05-01
+
+Classic Full Disk Access gotcha (per CLAUDE.md). TCC grant invalidated, likely macOS update. Fix:
+
+1. System Settings → Privacy & Security → Full Disk Access → remove `pensieve-ingest` with `–`
+2. Re-add `/Users/Karthik/.local/bin/pensieve-ingest` (⌘⇧G paste path)
+3. Test: `launchctl kickstart -k gui/$(id -u)/com.karthikshashidhar.pensieve.ingest`
+
+Want …
+- File exist (Karthik shell can read). Run still going - no error, no done. 4 days backlog. Wait more.
+- Background watcher armed. Wait for done/error.
+- Not yet. Still chewing - 13:53 start, ~10min elapsed, no done line. Prior big runs took 20+ min. Backlog ~4 days notes. Watcher fires when done.
+- Process gone. No `done` line, no error line - died silent. Check launchd exit status.
+- No new wiki entries. Run died exit 1 with zero output. Run by hand to see real error.
+- Done. 13 notes processed, 10 themes touched, 3 contradictions, $0.35.
+
+But ran via my user shell - **not** launchd. The TCC/Full Disk Access still not fixed. Tomorrow 10:17 launchd run will fail same way unless you re-grant:
+
+System Settings → Privacy & Security → Full Disk Access → remove `pensieve-ingest` (`–`) → re-add `/Users/Karthik/.local/bin/pensieve-ingest`.
+
+Then `launchctl kickstart -k gui/$(id -u)/com.karthikshashidhar.pensieve.ingest` to verify.
+- Fixed. Launchd-spawned run at 14:40:50 read vault clean, "no unprocessed notes" (manual run already ate backlog). No TCC error. Tomorrow 10:17 will work.
+
+
+## Session e6ba7a04 — 2026-05-06T19:52:18 (reason: prompt_input_exit)
+
+### Prompts
+
+- my friend built this: https://github.com/pHequals7/muesli  . can we put this together with what we have here to create an overall "personal konwledge management system"? how do we go about this? what all cna we achieve? things i want to include - recording of callss on mac, voice notes through both mac and phone, text notes through both mac and phone, recording of offline conversations on phone, etc. since i'm in the process of s tarting a consulting business i need to get my knowlege mangement 
+- phone app already has text inpuit. which  takes links as well
+- resume
+- [Request interrupted by user for tool use]
+- write down this ihn a markdown. and in a new folder since htis is a new project. we'll wrok on this tomorow
+- <command-name>/exit</command-name>
+  ```
+              <command-message>exit</command-message>
+            <command-args></command-args>
+  ```
+- <local-command-stdout>Goodbye!</local-command-stdout>
+
+### Assistant actions
+
+- Caveman mode on. Plan mode active. Phase 1: explore muesli + current Pensieve scope.
+- Got shape. Muesli = Mac native dictation + call/meeting transcription w/ diarization + SQLite + CLI JSON. Pensieve = phone voice → Claude themes → Obsidian wiki. Big overlap on transcription, complementary on capture surfaces.
+
+Before plan, need fork decisions.
+- What want clarify? Tell me what unclear or wrong, then I rephrase.
+- Noted: phone app handle text + URLs already. Q4 moot.
+
+Confirm so far:
+- muesli transcripts → `raw/` of personal vault
+- Two vaults: personal (Pensieve) + new consulting
+- Readings: PDFs in `readings/` + URL→markdown ingest
+
+Two more forks before plan:
+- All forks decided. Writing plan.
+- You're out of extra usage · resets 3:20pm (Asia/Calcutta)
+- Done. Plan saved at `/Users/Karthik/Documents/work/PKM/PLAN.md`. Pick up tomorrow.
+
+
+## Session — Lock Screen capture shortcut (2026-05-09)
+
+**Prompt:** Reddit post about an ADHD-friendly capture pattern - one-tap Lock Screen shortcut into a blank pre-addressed email-to-self. "Capture and organisation are different jobs. Friction is the silent ADHD-habit killer." Can we apply it here?
+
+### Decision
+
+Pensieve already separates capture from organisation (record → auto-process → wiki). The friction left was *getting into recording state*: unlock phone → find app → tap → tap Start. The Reddit pattern's real lesson is one-tap-from-cold.
+
+Implemented as a `pensieve://record` URL scheme + toggle:
+
+- `Info.plist` registers the `pensieve` scheme.
+- `SecondBrainApp.swift` handles `.onOpenURL` for `pensieve://record`.
+- `ThoughtCaptureService.toggleRecordingFromShortcut()` — if not recording, request mic permission then start; if already recording, stop. Same URL = start/stop toggle.
+
+User-facing setup: Shortcuts app → "Open URLs" action with `pensieve://record` → name it "Capture" → put on Home Screen / Back Tap / Action Button. (Lock Screen widget picker turned out to be flaky on the user's device; Home Screen icon and Back Tap both worked. Documented all four routes.)
+
+### Why URL scheme and not App Intent / Live Activity
+
+App Intent + Live Activity would let recording start without opening the app at all (truly zero-UI). That's a bigger lift - separate widget extension target, AppIntent boilerplate, Live Activity for the "currently recording" state. Deferred. Current version reopens the app but mic starts immediately and the second tap stops it, so practically it's two taps total: one to start, one to stop, with no UI navigation in between.
+
+### Files touched
+
+- `iOS/SecondBrain/Info.plist` — added `CFBundleURLTypes`.
+- `iOS/SecondBrain/SecondBrainApp.swift` — `.onOpenURL` handler.
+- `iOS/SecondBrain/Services/ThoughtCaptureService.swift` — `toggleRecordingFromShortcut()`.
+
+Pre-existing in the same diff (unrelated, from prior session): Whisper model bumped from `base` → `small` in `TranscriptionService.swift` for better accuracy on names/jargon.
+

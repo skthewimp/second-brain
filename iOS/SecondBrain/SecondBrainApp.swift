@@ -21,6 +21,13 @@ struct SecondBrainApp: App {
                     // Resume any notes stuck mid-pipeline from a prior session
                     await captureService.resumeStuckNotes()
                 }
+                .onOpenURL { url in
+                    guard url.scheme == "pensieve", url.host == "record" else { return }
+                    if !apiKey.isEmpty && !captureService.isConfigured {
+                        captureService.configure(apiKey: apiKey)
+                    }
+                    Task { await captureService.toggleRecordingFromShortcut() }
+                }
         }
     }
 }

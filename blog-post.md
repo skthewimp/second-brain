@@ -26,6 +26,14 @@ Voice was the only input for the first couple of weeks. Then I noticed two gaps.
 
 The text box accepts free-form text. If there's a URL in it, the iOS app passes the URL to Claude along with my text, using the new server-side `web_fetch` tool. Claude fetches the article, treats it as the thing I'm reacting to, and treats my text as my take on it. The themes that come out reflect the take, not just the article summary. Paywalled articles fail gracefully - the note still saves with my text, just without the article context, and the frontmatter records `article_fetched: false` so I know which is which.
 
+## One-tap capture
+
+The other thing I added recently was a Lock Screen shortcut. I'd noticed that even with the app on my home screen, there was a noticeable gap between "I want to record this thought" and "I am recording" - unlock, find app, tap, tap Start. Four steps. Doesn't sound like much. It is.
+
+A Reddit post made the point sharper than I'd been making it to myself: capture and organisation are different jobs, and a five-second extra step is the difference between a habit that lasts ten years and one that dies on day three. So I added a `pensieve://record` URL scheme. The iOS Shortcut just opens that URL. The app catches it, starts recording immediately. Tap the same shortcut again - it stops, and the pipeline runs as usual. One tap to start, one to stop, no UI in between.
+
+I have it on Back Tap (double-tap the back of the phone). From locked screen to recording in about a second.
+
 ## Where this goes
 
 I've been deliberately not building retrieval features. The number one failure mode of personal-knowledge systems, from everything I've read, is that they become write-only - notes go in, nothing useful comes out, the user feels guilty about the unread pile, the system dies. Zero-friction capture is necessary but not sufficient. You also need the system to push things back at you - daily digests, "you're going in circles" alerts, related past notes surfaced when you start a new capture. All of that is on the list.

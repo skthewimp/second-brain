@@ -67,6 +67,20 @@ class ThoughtCaptureService: ObservableObject {
         currentAudioURL = audioRecorder.startRecording()
     }
 
+    /// Toggle recording from a deep link / shortcut. Requests mic permission if needed.
+    /// First tap starts; tap again (which reopens the app via the same URL) stops.
+    func toggleRecordingFromShortcut() async {
+        if isRecording {
+            stopRecording()
+            return
+        }
+        guard isConfigured else { return }
+        let granted = await audioRecorder.requestPermission()
+        if granted {
+            await MainActor.run { startRecording() }
+        }
+    }
+
     func stopRecording() {
         let duration = audioRecorder.stopRecording()
 

@@ -9,8 +9,8 @@ class TranscriptionService: ObservableObject {
     @Published var loadingProgress: String = "Not loaded"
 
     /// Load the Whisper model. Call once at app startup.
-    /// Uses "base" model for balance of speed and accuracy on iPhone.
-    private static let modelName = "openai_whisper-base"
+    /// Uses "small" model — meaningfully better accuracy than "base" on names/jargon, still fits iPhone 13 ANE comfortably.
+    private static let modelName = "openai_whisper-small"
 
     /// Check if the model is already downloaded
     private func modelFolder() -> String? {

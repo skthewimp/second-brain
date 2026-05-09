@@ -80,6 +80,13 @@ Pensieve/
 5. **Set up Obsidian vault sync** between phone and Mac (iCloud or manual)
 6. **On Mac**, the daily cron job runs `scripts/ingest.sh` to process new notes into the wiki
 
+### One-tap capture (optional)
+
+The app registers the `pensieve://record` URL scheme. Open that URL and recording toggles - first tap starts, second stops. Wire it up to whatever surface you want:
+
+- **Shortcuts app** → New Shortcut → "Open URLs" action → `pensieve://record` → name it "Capture". Add to Home Screen, Lock Screen widget, or Action Button.
+- **Back Tap** (Settings → Accessibility → Touch → Back Tap) → assign the Capture shortcut to Double Tap. Double-tap the back of the phone = recording starts, even from the lock screen.
+
 ### Sync Options
 - **Obsidian + iCloud** (recommended): Create the vault in Obsidian on iPhone, it syncs via iCloud. Open same vault on Mac. Free, automatic, ~KB of storage.
 - **Manual**: Connect phone to Mac via Finder, copy the vault folder.

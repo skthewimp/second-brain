@@ -22,6 +22,17 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Pensieve needs microphone access to record your thoughts as voice notes.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.karthikshashidhar.secondbrain</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>pensieve</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
