@@ -580,3 +580,117 @@ App Intent + Live Activity would let recording start without opening the app at 
 
 Pre-existing in the same diff (unrelated, from prior session): Whisper model bumped from `base` → `small` in `TranscriptionService.swift` for better accuracy on names/jargon.
 
+
+## Session f55af56a — 2026-05-10T20:42:15 (reason: prompt_input_exit)
+
+### Prompts
+
+- saw this on reddit. can this be applied here? hat finally worked was a stupid Shortcut on my Lock Screen:
+  ```
+  
+Tap the icon
+Cursor lands in a blank email pre-addressed to myself
+Type
+Send
+That's it. No app to open. No folder to pick. No tag to apply. No file to name. The thought lands in my inbox where I'll see it tomorrow, mixed with everything else I haven't dealt with — which is fine, because once a day I batch-sort during my "boring task" mode.
+
+Two things made this work that no productivity blog ever told me:
+
+Capture and organization are different jobs. Doing them at the same moment kills the capture step. ADHD brains can't context-switch from "creative thought" to "where does this go" in 3 seconds.
+Friction is the silent ADHD-habit killer. A 5-second extra step doesn't sound like much for neurotypical people. For us it's the difference between a habit that lasts 10 years and one that dies on day 3.
+The shortcut takes about 30 seconds to build:
+
+Open Shortcuts app
+New shortcut → Add Action → Send Email
+Set "To" to your own email, leave subject and body blank
+Save, then add as a Lock Screen widget
+  ```
+- yes
+- its' gone into "Copying shared cache symbols from Karthik's iPhone (52% completed)"
+- no i'm finding it difficult to do this on my phone. you think yo ucan take control of it and do it?
+- when i click on shortcut, it says "tap o add widget". this capture doesn't appear there
+- when i tap it nothing comes
+- ok this seems to be working now.  can you docuemnt what you've done, and update github? also update the devlog and blog nad stuff
+- why have you left it untracked
+- A
+- <command-name>/exit</command-name>
+  ```
+              <command-message>exit</command-message>
+            <command-args></command-args>
+  ```
+- <local-command-stdout>Goodbye!</local-command-stdout>
+
+### Assistant actions
+
+- Partial fit. Pensieve already nail capture-org split (record → auto-process). Lock-screen widget = friction cut for *trigger*, but iOS app already need 2-3 taps + WhisperKit warmup.
+
+Real win = Lock Screen widget shortcut launching SecondBrain straight into recording state (skip ContentView, auto-start `AudioRecorderService`). One tap, talk, done. Tradeoff: need App Intent + deep link, ~50 LOC in `SecondBrainApp.swift` + Info.plist URL scheme, plus widget extension target.
+
+Want me draft it?
+- Plan: URL scheme `pensieve://record` → app opens → toggle record. User Shortcut on Lock Screen runs "Open URL pensieve://record". Tap once = start, tap again (reopens) = stop.
+- Build clean. Done:
+
+- **Info.plist**: registered `pensieve://` URL scheme
+- **ThoughtCaptureService.swift**: `toggleRecordingFromShortcut()` — requests mic perm, starts; if already recording, stops
+- **SecondBrainApp.swift**: `.onOpenURL` handles `pensieve://record` → toggle
+
+Setup on phone:
+1. Reinstall app (URL scheme need fresh install).
+2. Shortcuts app → New → "Open URLs" action → `pensieve://record` → name it "Capture".
+3. Lock Screen → Customize → add Shortcuts widget → pick "Capture".
+
+Flow: tap widget → app opens, recording starts. Tap widget again → app reopens, recording stops, pipe…
+- That's Xcode pulling symbols from your phone for debugging - normal first-connect or post-iOS-update behavior. Unrelated to this build. Just wait it out (can take 10-30 min on first run, faster after). Build itself already finished clean.
+- No - I can't drive the phone UI. No tool here for tapping through Shortcuts app or Lock Screen customization.
+
+What I *can* do: build + install the updated app to your phone so the URL scheme is live. Want that?
+
+Then phone steps stay manual but minimal:
+1. Shortcuts app → "+" top right → search action "Open URLs" → paste `pensieve://record` → name "Capture" → done.
+2. Long-press Lock Screen → Customize → Lock Screen → tap widget row under clock → Shortcuts → pick "Capture".
+
+If you want, send me a screenshot of where you're stuck and I'll talk you through that specific screen.
+- That "Tap to add widget" is the placeholder - widget added but not bound yet.
+
+Steps:
+1. Still in Lock Screen Customize mode (wallpaper edit screen).
+2. Tap the widget itself (the one saying "Tap to add widget").
+3. List of shortcuts appears → pick "Capture".
+4. Tap "Done" top right → "Set as Wallpaper Pair".
+
+If list is empty / Capture missing:
+- Open Shortcuts app → confirm "Capture" exists in **My Shortcuts** (not in a folder).
+- Open Capture → tap **(i)** info button at bottom → toggle **"Show on Lock Screen"** ON.
+- Also toggle **"Pin in Menu Bar"** off, **"Use with Siri"** doesn't matter…
+- iOS Lock Screen widget picker is buggy. Easier paths:
+
+**Option A: Home Screen icon (simplest)**
+Shortcuts app → Capture → share icon (top right) → "Add to Home Screen" → name "Capture" → Add. Now it's an app-icon on your Home Screen, one tap launches.
+
+**Option B: Back Tap (truly zero-UI)**
+Settings → Accessibility → Touch → Back Tap → Double Tap → pick "Capture". Now double-tap back of phone = capture starts. Works from anywhere, even Lock Screen if phone is unlocked.
+
+**Option C: Action Button (if iPhone 15 Pro / 16)**
+Settings → Action Button → Shortcut → Capture.
+
+**Option D: retry Lock S…
+- Now commit + push.
+- Pushed: `2969d9d..f2fffb3` on `main`.
+
+Updated:
+- **dev-log.md** - new session entry with decision rationale + files touched
+- **blog-post.md** - new "One-tap capture" section before "Where this goes"
+- **README.md** - new "One-tap capture (optional)" subsection under Setup with Shortcut + Back Tap instructions
+- **code** - URL scheme + toggle handler
+
+Left untracked: `scripts/pensieve-ingest/dev-log.md` (separate scope, not committing without you asking).
+- Honest answer: I assumed it was accidental. It's auto-generated by a Claude Code SessionEnd hook, but it landed in `scripts/pensieve-ingest/` instead of repo root - looks like the hook ran while CWD was the Swift package subdir. The canonical dev-log is `/dev-log.md`, so this one is either a misfiled duplicate or a stray.
+
+Quick check of contents would tell us if it's net-new content (worth merging into root dev-log) or duplicate (worth deleting). Want me to:
+
+**A.** Merge unique sessions into root `dev-log.md`, delete the stray
+**B.** Just commit it as-is at its current path
+**C.** Delete it
+…
+- Pushed `f2fffb3..5af7115`. Stray gone, session merged into root dev-log between `0e9d3dbb` and `7b1c0bc6` at correct chrono position.
+
