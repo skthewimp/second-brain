@@ -694,3 +694,16 @@ Quick check of contents would tell us if it's net-new content (worth merging int
 …
 - Pushed `f2fffb3..5af7115`. Stray gone, session merged into root dev-log between `0e9d3dbb` and `7b1c0bc6` at correct chrono position.
 
+<!-- claude-session:ddd7078f-e1da-4466-8729-7e70b83a60a7:start -->
+## 2026-05-15 16:04 IST | Claude session `ddd7078f-e1d`
+
+### User prompts
+> Reviving the project to get myself a developer license using my LLP account. Now we have a website for the LLP. We need to create an email ID on the website. I think that was pending. What are the next steps?
+> ok mailbox has been created. now how do i creat an apple ID?
+> [Image #1]
+
+### Work done
+- Right — PAN, LLPIN, phone, address all in there. Move it out of the repo entirely.
+- Moved to `/Users/Karthik/Desktop/admin/Karthik Shashidhar LLP/apple-llp-onboarding.md` — co-located with COI, PAN, TAN. `git status` clean — file was untracked so no repo trace. **Update reference path in your head:**...
+
+<!-- claude-session:ddd7078f-e1da-4466-8729-7e70b83a60a7:end -->
