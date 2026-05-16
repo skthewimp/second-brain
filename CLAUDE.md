@@ -34,7 +34,7 @@ Record audio → WhisperKit transcribes on-device → Claude API (claude-sonnet-
 
 Each ingest finds unprocessed notes in `raw/` (by diffing against `wiki/log.md`), makes a single direct Claude API call with the wiki state + new notes, and applies the returned JSON patch to theme pages, timeline, contradictions, log, and index. The mindmap pass is a separate Claude call that maintains a stateful tree (`wiki/mindmap.json`) via diff/patch ops and renders a self-contained `wiki/mindmap.html` (D3 v7 from CDN, data inlined). `PensieveIngestCore` (the library target) is platform-agnostic so it can be imported into the iOS app for phone-only ingestion later.
 
-Requires Full Disk Access granted to `/Users/Karthik/.local/bin/pensieve-ingest` so launchd-spawned runs can access the iCloud vault. API key is set via `ANTHROPIC_API_KEY` in each launchd plist's `EnvironmentVariables`. **After every `cp` of a fresh release binary into `~/.local/bin/`, re-run `codesign --force --sign - ~/.local/bin/pensieve-ingest`** — launchd refuses to spawn unsigned binaries with `OS_REASON_CODESIGNING`.
+Binary lives inside `/Applications/PensieveIngest.app/Contents/MacOS/pensieve-ingest`. The .app wrapper exists so TCC keys on the stable bundle ID (`com.karthikshashidhar.pensieve-ingest`) rather than the binary's cdhash — Full Disk Access granted to the .app survives rebuilds and OS updates. API key is set via `ANTHROPIC_API_KEY` in each launchd plist's `EnvironmentVariables`. **After every rebuild, `cp` the fresh release binary into `/Applications/PensieveIngest.app/Contents/MacOS/` and re-run `codesign --force --deep --sign - /Applications/PensieveIngest.app`** — launchd refuses to spawn unsigned binaries with `OS_REASON_CODESIGNING`.
 
 ### Obsidian vault location
 `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/SecondBrain/`
@@ -123,8 +123,8 @@ Uses iOS security-scoped bookmarks to persist folder access. User picks vault vi
 - Wiki ingestion rewritten as a Swift binary (`pensieve-ingest`) that does a single direct Claude API call — ~33x cheaper than the old agentic Claude Code path (~$0.01/note vs ~$0.36/note on a measured 10-note run)
 - User is in "collect data for a week" mode — do NOT add features unless asked
 
-### Known gotcha: Full Disk Access after macOS updates
-`/Users/Karthik/.local/bin/pensieve-ingest` needs Full Disk Access so launchd-spawned runs can read the iCloud Obsidian vault. The binary is adhoc-signed, so macOS updates can invalidate the TCC grant while leaving the UI toggle visibly "on" — symptom is `error: The file "…md" couldn't be opened` in `/tmp/pensieve-ingest.log`. Fix: remove the entry with `–` in System Settings → Privacy & Security → Full Disk Access, re-add `/Users/Karthik/.local/bin/pensieve-ingest` (⌘⇧G to paste path), then test with `launchctl kickstart -k gui/$(id -u)/com.karthikshashidhar.pensieve.ingest`.
+### Known gotcha: Full Disk Access
+The vault lives in iCloud and macOS Sequoia tags those files with the restricted `com.apple.provenance` xattr, which forces TCC/FDA checks on read. The binary now lives inside `/Applications/PensieveIngest.app` so TCC keys on bundle ID (stable) rather than cdhash (changes every rebuild). Grant FDA **once** to `/Applications/PensieveIngest.app` in System Settings → Privacy & Security → Full Disk Access. Symptom of missing FDA: `error: The file "…md" couldn't be opened` in `/tmp/pensieve-ingest.log`. Verify with `launchctl kickstart -k gui/$(id -u)/com.karthikshashidhar.pensieve.ingest`. Note: `xattr -dr com.apple.provenance` does not work on Sequoia — the xattr is system-restricted; FDA is the only path.
 
 ### Deferred work (user explicitly deferred these)
 1. **Retrieval/resurfacing** — daily digests, "you're going in circles" alerts, related past notes on new capture. Waiting for usage data.
