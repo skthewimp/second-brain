@@ -723,3 +723,17 @@ Quick check of contents would tell us if it's net-new content (worth merging int
 - iOS/SecondBrain/Services/AudioRecorderService.swift | 2 +-
 
 <!-- claude-session:38337094-8d43-44a3-867a-3388652cdffc:end -->
+
+<!-- claude-session:b8b211c5-54c9-4898-8265-92a6afb0c284:start -->
+## 2026-05-16 14:37 IST | Claude session `b8b211c5-54c`
+
+### User prompts
+> has the daily process been running?
+> i've done this SO MANY TIMES
+> what does that entail? i'm in the process for getting a developer license for my LLP
+
+### Work done
+- One-line API migration. iOS 17 deprecated `AVAudioSession.sharedInstance().requestRecordPermission` → replacement is `AVAudioApplication.requestRecordPermission`. Same semantics. Was sitting in working tree before thi...
+- Pushed `3af7ddc`.
+
+<!-- claude-session:b8b211c5-54c9-4898-8265-92a6afb0c284:end -->
