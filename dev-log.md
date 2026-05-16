@@ -707,3 +707,19 @@ Quick check of contents would tell us if it's net-new content (worth merging int
 - Moved to `/Users/Karthik/Desktop/admin/Karthik Shashidhar LLP/apple-llp-onboarding.md` — co-located with COI, PAN, TAN. `git status` clean — file was untracked so no repo trace. **Update reference path in your head:**...
 
 <!-- claude-session:ddd7078f-e1da-4466-8729-7e70b83a60a7:end -->
+
+<!-- claude-session:38337094-8d43-44a3-867a-3388652cdffc:start -->
+## 2026-05-16 14:30 IST | Claude session `38337094-8d4`
+
+### User prompts
+> [Image #1]
+> should i reload the app?
+> ok. also - what whisperkit model does it use?
+
+### Work done
+- `openai_whisper-small`. From `argmaxinc/whisperkit-coreml` on HuggingFace. Comment: better accuracy than base on names/jargon, fits iPhone 13 ANE.
+- iPhone 13 = A15, 4GB RAM. Current `small` (~150MB) is sweet spot for that chip. Options: - `openai_whisper-base` — faster, less accurate on names/jargon. Downgrade. - `openai_whisper-small` ← **current, optimal balanc...
+- Touched files: `iOS/SecondBrain/Services/AudioRecorderService.swift`
+- iOS/SecondBrain/Services/AudioRecorderService.swift | 2 +-
+
+<!-- claude-session:38337094-8d43-44a3-867a-3388652cdffc:end -->
