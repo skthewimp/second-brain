@@ -24,7 +24,7 @@ targets:
         INFOPLIST_FILE: SecondBrain/Info.plist
         SWIFT_EMIT_MODULE_INTERFACE: false
         PRODUCT_BUNDLE_IDENTIFIER: com.karthikshashidhar.secondbrain
-        DEVELOPMENT_TEAM: 6APL9VM8C3
+        DEVELOPMENT_TEAM: DQ23J9RMB2
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

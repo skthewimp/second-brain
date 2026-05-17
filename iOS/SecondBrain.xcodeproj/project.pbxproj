@@ -149,7 +149,7 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					FA8B7DFF2D7B9F379859A7A4 = {
-						DevelopmentTeam = 6APL9VM8C3;
+						DevelopmentTeam = DQ23J9RMB2;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -270,7 +270,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 6APL9VM8C3;
+				DEVELOPMENT_TEAM = DQ23J9RMB2;
 				INFOPLIST_FILE = SecondBrain/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -346,7 +346,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 6APL9VM8C3;
+				DEVELOPMENT_TEAM = DQ23J9RMB2;
 				INFOPLIST_FILE = SecondBrain/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

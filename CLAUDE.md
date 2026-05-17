@@ -95,7 +95,7 @@ scripts/
 
 ### Build & deploy
 - Bundle ID: `com.karthikshashidhar.secondbrain`
-- Team: `6APL9VM8C3`
+- Team: `DQ23J9RMB2` (Karthik Shashidhar Technologies LLP — paid Apple Developer, profile valid ~1 year). Previously `6APL9VM8C3` (free personal team, 7-day profile expiry — switched 2026-05-17)
 - Build: `xcodegen generate` then `xcodebuild -project SecondBrain.xcodeproj -scheme SecondBrain`
 - Phone device ID may change; use `xcrun xctrace list devices` to find current ID
 - `xcodebuild install` wipes app data including cached WhisperKit model
