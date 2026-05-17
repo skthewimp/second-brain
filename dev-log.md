@@ -737,3 +737,17 @@ Quick check of contents would tell us if it's net-new content (worth merging int
 - Pushed `3af7ddc`.
 
 <!-- claude-session:b8b211c5-54c9-4898-8265-92a6afb0c284:end -->
+
+<!-- claude-session:995782b5-b14f-49ae-b600-4242f2b9f632:start -->
+## 2026-05-17 08:42 IST | Claude session `995782b5-b14`
+
+### User prompts
+> i have an apple developer license now. let's put this on that so that i don't need to keep renewing the app every week etc.
+> [Image #1]
+> [Image #2]
+
+### Work done
+- Committed + pushed. What Developer ID unlocks that we **haven't** used (and probably don't need to right now): - **Notarization** of `PensieveIngest.app` — only matters if you distribute it to others. Solo use, skip....
+- Fair. CLAUDE.md still says "April 2026 / collect data for a week" and it's mid-May. Stale. Let me fix it — what's the actual current mode? Options I can think of: - Still pure collection, just no longer treat the defe...
+
+<!-- claude-session:995782b5-b14f-49ae-b600-4242f2b9f632:end -->
