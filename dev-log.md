@@ -751,3 +751,4 @@ Quick check of contents would tell us if it's net-new content (worth merging int
 - Fair. CLAUDE.md still says "April 2026 / collect data for a week" and it's mid-May. Stale. Let me fix it — what's the actual current mode? Options I can think of: - Still pure collection, just no longer treat the defe...
 
 <!-- claude-session:995782b5-b14f-49ae-b600-4242f2b9f632:end -->
+
